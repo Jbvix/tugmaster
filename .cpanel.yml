@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/c62gtwye66po/public_html/tugmaster
+    - /bin/cp -R * $DEPLOYPATH

@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Treinamento 3D | UTE Hamworthy ST-C</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!--
+    Desenvolvido por: Jossian Costa de Brito
+  © 2025 - Direitos Autorais Reservados. Desenvolvido por Jossian Costa de Brito.
+Este simulador é propriedade intelectual protegida por lei. A cópia, distribuição ou modificação sem autorização expressa é proibida.
+-->
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; overflow: hidden; }
+    #renderer-container canvas { display: block; width: 100%; height: 100%; border-radius: 0.5rem; }
+    .sidebar-button { transition: all 0.3s ease; }
+    .sidebar-button.active { background-color: #005A9C; color: white; }
+    .feedback { padding: 8px; margin-top: 8px; border-radius: 4px; font-size: 0.9em; }
+    .feedback.correct { background-color: rgba(4, 120, 87, 0.5); }
+    .feedback.incorrect { background-color: rgba(153, 27, 27, 0.5); }
+    .data-label { transition: color 0.5s ease-in-out; }
+    .data-value { transition: all 0.5s ease-in-out; min-width: 80px; }
+    .value-normal { color: #22c55e; }
+    .value-off { color: #9ca3af; }
+  </style>
+</head>
+
+<footer style="text-align:center; margin-top:20px; font-size:14px; color:#666; writing-mode: vertical-rl; transform: rotate(180deg);">
+  © 2025 - Direitos Autorais Reservados<br>
+  Desenvolvido por <strong>Jossian Costa de Brito</strong>
+</footer>
+
+<body class="bg-gray-900 text-white flex h-screen">
+  <!-- Sidebar de Navegação -->
+  <aside class="w-64 bg-gray-800 p-4 flex flex-col justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-center mb-6">UTE ST-C 3D</h1>
+      <nav id="module-nav" class="space-y-2">
+        <button data-module="familiarization" class="sidebar-button w-full text-left py-2 px-4 rounded-lg hover:bg-gray-700 active">1. Familiarização</button>
+        <button data-module="startup" class="sidebar-button w-full text-left py-2 px-4 rounded-lg hover:bg-gray-700">2. Procedimentos de Partida</button>
+        <button data-module="operation" class="sidebar-button w-full text-left py-2 px-4 rounded-lg hover:bg-gray-700">3. Operação de Rotina</button>
+        <button data-module="troubleshooting" class="sidebar-button w-full text-left py-2 px-4 rounded-lg hover:bg-gray-700">4. Solução de Problemas</button>
+        <button data-module="maintenance" class="sidebar-button w-full text-left py-2 px-4 rounded-lg hover:bg-gray-700">5. Manutenção</button>
+      </nav>
+    </div>
+    <div class="text-xs text-center text-gray-400">
+      <p>Versão do Simulador: 1.6.2</p>
+    </div>
+  </aside>
+
+  <!-- Conteúdo Principal -->
+  <main class="flex-1 flex flex-col">
+    <header class="bg-gray-800 p-4 shadow-md text-center">
+      <h2 id="module-title" class="text-xl font-semibold">Módulo 1: Familiarização com o Equipamento</h2>
+    </header>
+
+    <div class="flex-1 flex p-4 gap-4">
+      <!-- Área de Simulação 3D -->
+      <div id="renderer-container" class="w-2/3 bg-gray-700 rounded-lg relative shadow-inner"></div>
+
+      <!-- Painel Direito -->
+      <div class="w-1/3 flex flex-col gap-4">
+        <!-- Painel de Informações (Apenas para Módulo 1) -->
+        <div id="info-panel" class="bg-gray-800 rounded-lg p-4 shadow-lg flex-1">
+          <h3 class="text-lg font-bold mb-2 border-b border-gray-600 pb-2">Informações do Componente</h3>
+          <div id="component-info" class="text-gray-300">
+            <p class="italic">Clique num componente para ver os detalhes.</p>
+          </div>
+        </div>
+        <!-- Painel de Dados -->
+        <div id="data-panel" class="bg-gray-800 rounded-lg p-4 shadow-lg">
+          <h3 class="text-lg font-bold mb-3 border-b border-gray-600 pb-2">Dados Operacionais</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between items-center">
+              <span class="data-label">Status do Sistema:</span>
+              <span id="data-system-status" class="font-mono font-bold data-value text-right value-normal">LIGADO</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="data-label">Pressão do Ar (PI 11):</span>
+              <span id="data-air-pressure" class="font-mono font-bold data-value text-right value-off">0.00 bar</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="data-label">Nível Tanque Aeração:</span>
+              <span id="data-tank-level" class="font-mono font-bold data-value text-right value-off">0 %</span>
+            </div>
+          </div>
+        </div>
+        <!-- Painel de Instruções -->
+        <div id="instruction-panel" class="bg-gray-800 rounded-lg p-4 flex-1 shadow-lg flex flex-col">
+          <h3 class="text-lg font-bold mb-2 border-b border-gray-600 pb-2">Instruções</h3>
+          <div id="instruction-text" class="text-gray-300 flex-1 overflow-y-auto"></div>
+          <div id="feedback-box"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // --- DADOS DO SIMULADOR ---
+    const componentData = {
+      'control-panel': { description: 'Controla a operação elétrica da unidade, incluindo bombas e sopradores.' },
+      'aeration-tank': { description: 'Corpo principal da unidade que abriga os compartimentos de aeração e sedimentação.' },
+      'blower': { description: 'Fornece ar para o Tanque de Aeração.' },
+      'main_breaker': { description: 'Isola ou fornece energia principal para o painel de controlo.' },
+      'valve_v10': { description: 'Válvula de saída principal do soprador de serviço.' },
+      'valve_v11': { description: 'Válvula que direciona o ar para os difusores no tanque de aeração.' },
+      'water_inlet': { description: 'Válvula para encher a unidade com água limpa para partida e limpeza.' },
+      'discharge_pump': { description: 'Bomba principal para descarregar o efluente tratado.' }
+    };
+
+    // --- ROTEIROS DOS MÓDULOS ---
+    // Módulo 2 - Procedimentos de Partida (inalterado)
+    const startupModuleSteps = [
+      {
+        instruction: "Vamos começar. A segurança é a prioridade. Para isolar eletricamente a unidade, clique no disjuntor principal (que está verde) para o desligar.",
+        targetComponent: 'main_breaker',
+        action: () => { componentStates.main_breaker_on = false; },
+        feedback_correct: "Excelente. Unidade isolada eletricamente.",
+      },
+      {
+        instruction: "Agora, prepare as linhas de ar. Abra a válvula de saída do soprador (V10).",
+        targetComponent: 'valve_v10',
+        action: () => { componentStates.valve_v10_open = true; },
+        feedback_correct: "Válvula V10 aberta.",
+      },
+      {
+        instruction: "Abra a válvula V11 para permitir que o ar chegue aos difusores.",
+        targetComponent: 'valve_v11',
+        action: () => { componentStates.valve_v11_open = true; },
+        feedback_correct: "Válvula V11 aberta.",
+      },
+      {
+        instruction: "Religue a energia no disjuntor principal para podermos testar o soprador.",
+        targetComponent: 'main_breaker',
+        action: () => { componentStates.main_breaker_on = true; },
+        feedback_correct: "Energia restabelecida.",
+      },
+      {
+        instruction: "Ligue o soprador clicando nele. Observe o painel de 'Dados Operacionais'.",
+        targetComponent: 'blower',
+        precondition: () => componentStates.main_breaker_on,
+        precondition_fail_feedback: "Não é possível ligar o soprador, a energia está desligada.",
+        action: () => { componentStates.blower_on = true; },
+        feedback_correct: "Soprador ligado. A pressão do ar está a subir.",
+      },
+      {
+        instruction: "Confirme que a pressão do ar atingiu o valor operacional (aprox. 0.25 bar). Se sim, clique no soprador para o desligar.",
+        targetComponent: 'blower',
+        action: () => { componentStates.blower_on = false; },
+        feedback_correct: "Soprador desligado. Teste do sistema de ar concluído.",
+      },
+      {
+        instruction: "Por segurança, isole a energia novamente no disjuntor principal antes de encher com água.",
+        targetComponent: 'main_breaker',
+        action: () => { componentStates.main_breaker_on = false; },
+        feedback_correct: "Segurança primeiro. Unidade isolada.",
+      },
+      {
+        instruction: "É hora de encher a unidade. Clique na válvula de entrada de água (V2) para encher o tanque.",
+        targetComponent: 'water_inlet',
+        action: () => { componentStates.tank_filled = true; },
+        feedback_correct: "Água a encher o tanque... Tanque cheio a 100%.",
+      },
+      {
+        instruction: "Procedimento de partida inicial concluído! Pode agora explorar outros módulos.",
+        targetComponent: null,
+      }
+    ];
+
+    // Módulo 3 - Operação de Rotina
+    const operationModuleSteps = [
+      {
+        instruction: "Checklist diário: clique no Painel de Controle para confirmar inspeção visual, ruído e cheiro do ML.",
+        targetComponent: 'control-panel',
+        action: () => { componentStates.operation_log.push('Checklist diário OK'); },
+        feedback_correct: "Checklist confirmado. Sem anomalias aparentes."
+      },
+      {
+        instruction: "Coleta de amostra – clique no Tanque Principal para executar o teste de sedimentação (SV30).",
+        targetComponent: 'aeration-tank',
+        action: () => {
+          const seed = (Date.now() % 9973) / 9973;
+          const sv30 = 28 + Math.round(seed * 17); // 28..45 %
+          componentStates.sv30 = sv30;
+          componentStates.need_desludge = sv30 > 35;
+        },
+        feedback_correct: () => {
+          const v = componentStates.sv30;
+          return `SV30 medido: ${v}% (${v > 35 ? 'ALTO – recomenda deslamagem' : 'Dentro da faixa'})`;
+        }
+      },
+      {
+        instruction: "Se SV30>35%: execute a deslamagem clicando na Bomba de Descarga.",
+        targetComponent: 'discharge_pump',
+        precondition: () => componentStates.need_desludge,
+        precondition_fail_feedback: "SV30 ≤ 35%. Deslamagem não necessária – avance para os próximos passos.",
+        action: () => {
+          componentStates.tankLevelPct = Math.max(70, componentStates.tankLevelPct - 20);
+          componentStates.operation_log.push('Deslamagem executada');
+        },
+        feedback_correct: () => `Deslamagem concluída. Nível lógico do tanque: ${componentStates.tankLevelPct}%`
+      },
+      {
+        instruction: "Confirme a limpeza do tanque de contato clicando novamente no Tanque Principal.",
+        targetComponent: 'aeration-tank',
+        action: () => { componentStates.operation_log.push('Limpeza do tanque de contato confirmada'); },
+        feedback_correct: "Limpeza confirmada."
+      },
+      {
+        instruction: "Teste de cloro residual – clique no Painel de Controle para registrar. Alvo: 0,5–1,0 mg/L.",
+        targetComponent: 'control-panel',
+        action: () => {
+          const base = 0.2 + ((Date.now() % 501) / 500) * 1.0; // 0.2..1.2
+          const tuned = Math.round((0.6 + (base - 0.6) * 0.7) * 100) / 100; // pende a ~0.6–0.8
+          componentStates.chlorine_residual = Math.max(0.2, Math.min(1.2, tuned));
+          componentStates.operation_log.push(`Cloro residual: ${componentStates.chlorine_residual} mg/L`);
+        },
+        feedback_correct: () => {
+          const c = componentStates.chlorine_residual;
+          const ok = c >= 0.5 && c <= 1.0;
+          return `Cloro residual registrado: ${c.toFixed(2)} mg/L ${ok ? '(OK)' : '(Ajustar dosagem)'}`;
+        }
+      },
+      {
+        instruction: "Rotina concluída! Registre o log diário e avance para o próximo ciclo quando desejar.",
+        targetComponent: null
+      }
+    ];
+
+    // Módulo 4 - Solução de Problemas
+    const TROUBLE_DB = {
+      CLORO_BAIXO: {
+        symptom: "Leitura de cloro residual baixa no efluente",
+        detail:  "Valores < 0,50 mg/L. Verifique dosagem/tempo de contato.",
+        cause:   "Dosagem insuficiente e/ou contato ineficaz",
+        remedy:  { target: 'control-panel', describe: "Ajustar dosagem de cloro no painel" },
+        verify:  () => componentStates.chlorine_residual >= 0.5 && componentStates.chlorine_residual <= 1.0,
+        afterAction: () => {
+          const c = 0.6 + Math.random()*0.2;
+          componentStates.chlorine_residual = Math.round(c*100)/100;
+        }
+      },
+      PRESSAO_ALTA: {
+        symptom: "Pressão do soprador acima da faixa",
+        detail:  "PI11 > 0,30 bar sugere linha estrangulada/valva fechada.",
+        cause:   "Linha de ar restrita (V10/V11 configuração incorreta)",
+        remedy:  { target: 'valve_v11', describe: "Abrir V11 para aliviar a linha" },
+        verify:  () => getSimulatedPressure() <= 0.27,
+        afterAction: () => {
+          componentStates.valve_v11_open = true;
+        }
+      },
+      DECANTACAO_RUIM: {
+        symptom: "Efluente turvo/odor; decantação ineficiente",
+        detail:  "SV30 alto e carryover; realizar deslamagem/ajuste ar.",
+        cause:   "MLSS elevado; precisa deslamar/otimizar aeração",
+        remedy:  { target: 'discharge_pump', describe: "Executar deslamagem parcial" },
+        verify:  () => {
+          return componentStates.tankLevelPct <= 85 && (componentStates.sv30 ?? 34) <= 35;
+        },
+        afterAction: () => {
+          componentStates.tankLevelPct = Math.max(70, componentStates.tankLevelPct - 15);
+          componentStates.sv30 = 33 + Math.floor(Math.random()*3); // 33–35
+        }
+      }
+    };
+
+    const troubleshootingModuleSteps = [
+      {
+        instruction: () => {
+          const f = TROUBLE_DB[componentStates.fault_code];
+          return `Detecte o sintoma: ${f.symptom}. Dica: leia o painel e observe o tanque.`;
+        },
+        targetComponent: 'control-panel',
+        action: () => { /* leitura/consciência */ },
+        feedback_correct: () => {
+          const f = TROUBLE_DB[componentStates.fault_code];
+          return `Sintoma reconhecido: ${f.detail}`;
+        }
+      },
+      {
+        instruction: "Diagnostique a causa provável clicando no componente mais relacionado.",
+        targetComponent: () => TROUBLE_DB[componentStates.fault_code].remedy.target,
+        action: () => { /* confirmar causa */ },
+        feedback_correct: "Causa coerente com o sintoma."
+      },
+      {
+        instruction: () => `Aplique o remédio: ${TROUBLE_DB[componentStates.fault_code].remedy.describe}.`,
+        targetComponent: () => TROUBLE_DB[componentStates.fault_code].remedy.target,
+        action: () => {
+          const f = TROUBLE_DB[componentStates.fault_code];
+          f.afterAction && f.afterAction();
+        },
+        feedback_correct: "Ação corretiva aplicada."
+      },
+      {
+        instruction: "Verifique se o sistema voltou à faixa normal. Clique no Painel de Controle para confirmar.",
+        targetComponent: 'control-panel',
+        action: () => {
+          const f = TROUBLE_DB[componentStates.fault_code];
+          const ok = f.verify();
+          componentStates.verify_ok = ok;
+          if (ok) componentStates.fault_active = false;
+        },
+        feedback_correct: () => componentStates.verify_ok ? "Parâmetros normalizados. Falha resolvida." : "Ainda fora da faixa. Reavalie a causa/ação."
+      },
+      {
+        instruction: "Módulo 4 concluído! Registre no log a ocorrência e a correção aplicada.",
+        targetComponent: null
+      }
+    ];
+
+    // Módulo 5 - Manutenção
+    function initMaintenanceFlags() {
+      const c = componentStates.service_counters || { monthly: 0, semiannual: 0, annual: 0 };
+      componentStates.service_due = {
+        monthly: c.monthly >= 30,
+        semiannual: c.semiannual >= 180,
+        annual: c.annual >= 365
+      };
+    }
+
+    const maintenanceModuleSteps = [
+      {
+        instruction: () => {
+          const due = componentStates.service_due;
+          const tags = [
+            due.monthly ? "Mensal DEVIDA" : "Mensal OK",
+            due.semiannual ? "6-Mensal DEVIDA" : "6-Mensal OK",
+            due.annual ? "Anual DEVIDA" : "Anual OK",
+          ].join(" | ");
+          return `Verifique pendências de manutenção no Painel de Controle. Status: ${tags}`;
+        },
+        targetComponent: 'control-panel',
+        action: () => {},
+        feedback_correct: "Pendências conferidas no painel."
+      },
+      {
+        instruction: "Execute manutenção MENSAL: limpeza/verificação da bomba dosadora (cloração). Clique no Painel de Controle para isolar/quimicamente preparar.",
+        targetComponent: 'control-panel',
+        action: () => {},
+        feedback_correct: "Sistema preparado para limpeza (segurança/químicos)."
+      },
+      {
+        instruction: "Limpe a bomba dosadora (cloração). Clique novamente no Painel para concluir o procedimento e resetar o contador mensal.",
+        targetComponent: 'control-panel',
+        action: () => {
+          componentStates.maintenance_log.push('Limpeza Bomba Dosadora (Mensal)');
+          componentStates.service_counters.monthly = 0;
+          componentStates.service_due.monthly = false;
+        },
+        feedback_correct: "Bomba dosadora limpa. Mensal resetada."
+      },
+      {
+        instruction: "Se 6-Mensal estiver DEVIDA: inspecione difusores de ar (Tanque). Clique no Tanque Principal.",
+        targetComponent: 'aeration-tank',
+        action: () => { componentStates._diffuser_inspected = true; },
+        feedback_correct: "Difusores inspecionados. Substitua se houver incrustação/baixa aeração."
+      },
+      {
+        instruction: "Se necessário, efetue substituição dos difusores. Confirme no Tanque Principal para registrar e resetar 6-Mensal.",
+        targetComponent: 'aeration-tank',
+        action: () => {
+          componentStates.maintenance_log.push('Inspeção/Substituição de Difusores (6-Mensal)');
+          componentStates.service_counters.semiannual = 0;
+          componentStates.service_due.semiannual = false;
+        },
+        feedback_correct: "6-Mensal concluída. Difusores OK."
+      },
+      {
+        instruction: "Se ANUAL estiver DEVIDA: verifique bomba de descarga e soprador. Clique na Bomba de Descarga para registrar.",
+        targetComponent: 'discharge_pump',
+        action: () => { componentStates._annual_pump_ok = true; },
+        feedback_correct: "Bomba verificada (selos/ruído/vibração)."
+      },
+      {
+        instruction: "Verifique o Soprador (rolamentos/ruído/PRV). Clique no Soprador.",
+        targetComponent: 'blower',
+        action: () => { componentStates._annual_blower_ok = true; },
+        feedback_correct: "Soprador verificado."
+      },
+      {
+        instruction: "Finalize manutenção ANUAL registrando no Painel de Controle (checar sobressalentes recomendados).",
+        targetComponent: 'control-panel',
+        action: () => {
+          componentStates.spares_kit_ok = true;
+          componentStates.maintenance_log.push('Checklist Anual completo (bombas/soprador/controles/sobressalentes)');
+          componentStates.service_counters.annual = 0;
+          componentStates.service_due.annual = false;
+        },
+        feedback_correct: "Anual concluída. Sobressalentes checados."
+      },
+      {
+        instruction: "Módulo 5 concluído! Registre o log e retorne à operação.",
+        targetComponent: null
+      }
+    ];
+
+    // --- GESTOR DE ESTADO DO SIMULADOR ---
+    let activeModule = 'familiarization';
+    let currentStepIndex = 0;
+    let componentStates = {};
+
+    // --- ELEMENTOS DO DOM ---
+    const container = document.getElementById('renderer-container');
+    const instructionPanel = document.getElementById('instruction-panel');
+    const instructionText = document.getElementById('instruction-text');
+    const feedbackBox = document.getElementById('feedback-box');
+    const moduleTitle = document.getElementById('module-title');
+    const navButtons = document.querySelectorAll('#module-nav button');
+    const dataPanel = document.getElementById('data-panel');
+    const infoPanel = document.getElementById('info-panel');
+    const componentInfo = document.getElementById('component-info');
+    const dataStatus = document.getElementById('data-system-status');
+    const dataPressure = document.getElementById('data-air-pressure');
+    const dataLevel = document.getElementById('data-tank-level');
+
+    // --- CONFIGURAÇÃO DA CENA 3D ---
+    let scene, camera, renderer, controls, raycaster, mouse, hovered;
+    const interactiveMeshes = [];
+    const materials = {};
+    let waterMesh;
+
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x374151);
+      camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(6, 5, 8);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+      scene.add(ambientLight);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      directionalLight.position.set(8, 10, 5);
+      scene.add(directionalLight);
+
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      createMaterials();
+      createUTEModel();
+
+      window.addEventListener('resize', onWindowResize);
+      renderer.domElement.addEventListener('mousemove', onMouseMove);
+      renderer.domElement.addEventListener('pointermove', onMouseMove);
+      container.addEventListener('click', onClick);
+
+      animate();
+    }
+
+    function createMaterials() {
+      materials.tank = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+      materials.control = new THREE.MeshStandardMaterial({ color: 0x455a64 });
+      materials.blower = new THREE.MeshStandardMaterial({ color: 0x0097a7 });
+      materials.blower_on = new THREE.MeshStandardMaterial({ color: 0x0097a7, emissive: 0x00ffff, emissiveIntensity: 0.5 });
+      materials.base = new THREE.MeshStandardMaterial({ color: 0x37474f });
+      materials.breaker_on = new THREE.MeshStandardMaterial({ color: 0x22c55e });
+      materials.breaker_off = new THREE.MeshStandardMaterial({ color: 0xef4444 });
+      materials.valve_closed = new THREE.MeshStandardMaterial({ color: 0xd32f2f });
+      materials.valve_open = new THREE.MeshStandardMaterial({ color: 0x388e3c });
+      materials.pipe = new THREE.MeshStandardMaterial({ color: 0x78909c });
+      materials.water = new THREE.MeshStandardMaterial({ color: 0x4dd0e1, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+      materials.discharge_pump = new THREE.MeshStandardMaterial({ color: 0x29b6f6 });
+      materials.hover = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 0.4 });
+    }
+
+    function createUTEModel() {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.2, 4.5), materials.base);
+      base.position.y = -2.2;
+      scene.add(base);
+
+      const mainTank = new THREE.Mesh(new THREE.BoxGeometry(5, 4, 4), materials.tank);
+      mainTank.position.set(0, 0, 0);
+      mainTank.userData = { id: 'aeration-tank', name: 'Tanque Principal' };
+      scene.add(mainTank);
+      interactiveMeshes.push(mainTank);
+
+      waterMesh = new THREE.Mesh(new THREE.BoxGeometry(4.9, 3.9, 3.9), materials.water);
+      waterMesh.position.set(0, -0.05, 0);
+      waterMesh.visible = false;
+      scene.add(waterMesh);
+
+      const controlPanel = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 0.6), materials.control);
+      controlPanel.position.set(-1.8, 0.5, 2.2);
+      controlPanel.userData = { id: 'control-panel', name: 'Painel de Controle' };
+      scene.add(controlPanel);
+      interactiveMeshes.push(controlPanel);
+
+      const mainBreaker = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 0.1), materials.breaker_on);
+      mainBreaker.position.set(0, 0.5, 0.31);
+      mainBreaker.userData = { id: 'main_breaker', name: 'Disjuntor Principal' };
+      controlPanel.add(mainBreaker);
+      interactiveMeshes.push(mainBreaker);
+
+      const blower = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 1), materials.blower);
+      blower.position.set(-1.5, 2.5, -1);
+      blower.userData = { id: 'blower', name: 'Soprador' };
+      scene.add(blower);
+      interactiveMeshes.push(blower);
+
+      const pumpGroup = new THREE.Group();
+      pumpGroup.userData = { id: 'discharge_pump', name: 'Bomba de Descarga' };
+      const pumpMotor = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.2, 32), materials.discharge_pump);
+      pumpMotor.rotation.z = Math.PI / 2;
+      const pumpHead = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), materials.discharge_pump);
+      pumpHead.position.x = 0.8;
+      pumpGroup.add(pumpMotor);
+      pumpGroup.add(pumpHead);
+      pumpGroup.position.set(-0.5, -1.5, 2.5);
+      scene.add(pumpGroup);
+      interactiveMeshes.push(pumpGroup);
+
+      const valveGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.4, 16);
+
+      const valveV10 = new THREE.Mesh(valveGeo, materials.valve_closed);
+      valveV10.position.set(-0.5, 2.5, -1.2);
+      valveV10.rotation.x = Math.PI / 2;
+      valveV10.userData = { id: 'valve_v10', name: 'Válvula V10' };
+      scene.add(valveV10);
+      interactiveMeshes.push(valveV10);
+
+      const valveV11 = new THREE.Mesh(valveGeo, materials.valve_closed);
+      valveV11.position.set(1.5, 2.5, 0);
+      valveV11.userData = { id: 'valve_v11', name: 'Válvula V11' };
+      scene.add(valveV11);
+      interactiveMeshes.push(valveV11);
+
+      const waterInlet = new THREE.Mesh(valveGeo, materials.valve_closed);
+      waterInlet.position.set(3, -1.5, 1);
+      waterInlet.userData = { id: 'water_inlet', name: 'Entrada de Água (V2)' };
+      scene.add(waterInlet);
+      interactiveMeshes.push(waterInlet);
+    }
+
+    // --- CICLO DE VIDA / ESTADO ---
+    function resetSimulation() {
+      componentStates = {
+        // existentes
+        main_breaker_on: true,
+        blower_on: false,
+        valve_v10_open: false,
+        valve_v11_open: false,
+        tank_filled: false,
+        // Módulo 3
+        tankLevelPct: componentStates?.tankLevelPct ?? 100,
+        need_desludge: false,
+        chlorine_residual: componentStates?.chlorine_residual ?? 0.0,
+        operation_log: [],
+        // Módulo 4
+        fault_code: null,
+        fault_active: false,
+        hint_level: 0,
+        verify_ok: false,
+        // Módulo 5
+        maintenance_log: componentStates?.maintenance_log ?? [],
+        // semente inicial para aparecer "DEVIDA" (mensal/6m/anual)
+        service_counters: componentStates?.service_counters ?? { monthly: 31, semiannual: 181, annual: 400 },
+        service_due: { monthly: true, semiannual: true, annual: true },
+        spares_kit_ok: false
+      };
+      updateVisuals();
+    }
+
+    function initTroubleshootingScenario() {
+      const keys = Object.keys(TROUBLE_DB);
+      const pick = keys[Math.floor((Date.now()%1000)/1000 * keys.length)];
+      componentStates.fault_code = pick;
+      componentStates.fault_active = true;
+      componentStates.hint_level = 0;
+      componentStates.verify_ok = false;
+
+      if (pick === 'CLORO_BAIXO') {
+        componentStates.chlorine_residual = 0.30 + Math.random()*0.15; // 0.30–0.45
+      }
+      if (pick === 'DECANTACAO_RUIM') {
+        componentStates.tankLevelPct = 100;
+        componentStates.sv30 = 38 + Math.floor(Math.random()*6); // 38–43
+      }
+    }
+
+    function getSimulatedPressure() {
+      const parsed = parseFloat(dataPressure.textContent) || 0.0;
+      if (activeModule !== 'troubleshooting') return parsed;
+
+      if (componentStates.fault_code === 'PRESSAO_ALTA' && componentStates.fault_active) {
+        const locked = !componentStates.valve_v11_open;
+        return locked ? 0.33 + Math.random()*0.05 : parsed;
+      }
+      return parsed;
+    }
+
+    function switchModule(moduleKey) {
+      activeModule = moduleKey;
+      currentStepIndex = 0;
+      navButtons.forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`[data-module="${moduleKey}"]`).classList.add('active');
+
+      resetSimulation();
+
+      const moduleTitles = {
+        familiarization: "Módulo 1: Familiarização com o Equipamento",
+        startup: "Módulo 2: Procedimentos de Partida",
+        operation: "Módulo 3: Operação de Rotina",
+        troubleshooting: "Módulo 4: Solução de Problemas",
+        maintenance: "Módulo 5: Manutenção"
+      };
+      moduleTitle.textContent = moduleTitles[moduleKey] || "Simulador UTE ST-C";
+
+      if (moduleKey === 'familiarization') {
+        instructionPanel.style.display = 'none';
+        dataPanel.style.display = 'none';
+        infoPanel.style.display = 'flex';
+        infoPanel.classList.add('flex-col');
+        componentInfo.innerHTML = '<p class="italic">Clique num componente para ver os detalhes.</p>';
+      } else {
+        instructionPanel.style.display = 'flex';
+        dataPanel.style.display = 'block';
+        infoPanel.style.display = 'none';
+
+        if (moduleKey === 'troubleshooting') {
+          initTroubleshootingScenario();
+        }
+        if (moduleKey === 'maintenance') {
+          initMaintenanceFlags();
+        }
+        updateStepUI();
+      }
+    }
+
+    function getActiveSteps() {
+      if (activeModule === 'startup') return startupModuleSteps;
+      if (activeModule === 'operation') return operationModuleSteps;
+      if (activeModule === 'troubleshooting') return troubleshootingModuleSteps;
+      if (activeModule === 'maintenance') return maintenanceModuleSteps;
+      return null;
+    }
+
+    function updateStepUI() {
+      const steps = getActiveSteps();
+      const step = steps ? steps[currentStepIndex] : null;
+
+      if (step && step.targetComponent !== null) {
+        const text = (typeof step.instruction === 'function') ? step.instruction() : step.instruction;
+        instructionText.innerHTML = `<p><b>Passo ${currentStepIndex + 1}:</b> ${text}</p>`;
+        feedbackBox.innerHTML = "";
+      } else if (step && step.targetComponent === null) {
+        instructionText.innerHTML = `<p class="text-green-400 font-semibold">${step.instruction}</p>`;
+        feedbackBox.innerHTML = '';
+      } else {
+        instructionText.innerHTML = `<p class="text-green-400 font-semibold">Módulo concluído.</p>`;
+      }
+    }
+
+    function showFeedback(message, isCorrect) {
+      feedbackBox.innerHTML = `<div class="feedback ${isCorrect ? 'correct' : 'incorrect'}">${message}</div>`;
+      if (isCorrect) {
+        setTimeout(() => {
+          currentStepIndex++;
+          updateStepUI();
+        }, 1200);
+      }
+    }
+
+    function getInteractiveParent(object) {
+      let current = object;
+      while (current) {
+        if (interactiveMeshes.includes(current)) return current;
+        current = current.parent;
+      }
+      return null;
+    }
+
+    function findObjectById(id) {
+      let found = null;
+      scene.traverse(o => { if (o.userData && o.userData.id === id) found = o; });
+      return found;
+    }
+
+    // --- HANDLERS POR MÓDULO ---
+    function handleStartupClick(interactiveObject) {
+      const currentStep = startupModuleSteps[currentStepIndex];
+      if (!currentStep) return;
+      if (currentStep.targetComponent === null) return;
+
+      const clickedId = interactiveObject.userData.id;
+
+      if (clickedId === currentStep.targetComponent) {
+        if (currentStep.precondition && !currentStep.precondition()) {
+          showFeedback(currentStep.precondition_fail_feedback, false);
+          return;
+        }
+        currentStep.action && currentStep.action();
+        showFeedback(currentStep.feedback_correct, true);
+      } else {
+        const targetObject = findObjectById(currentStep.targetComponent);
+        const targetName = targetObject ? targetObject.userData.name : 'o componente correto';
+        const clickedName = interactiveObject.userData.name || 'uma área não interativa';
+        showFeedback(`Ação incorreta. A instrução pede para interagir com '${targetName}'. Você clicou em '${clickedName}'.`, false);
+      }
+    }
+
+    function handleOperationClick(interactiveObject) {
+      const currentStep = operationModuleSteps[currentStepIndex];
+      if (!currentStep) return;
+      if (currentStep.targetComponent === null) return;
+
+      if (currentStep.precondition && !currentStep.precondition()) {
+        showFeedback(currentStep.precondition_fail_feedback, false);
+        currentStepIndex++;
+        updateStepUI();
+        return;
+      }
+
+      const clickedId = interactiveObject.userData.id;
+      if (clickedId === currentStep.targetComponent) {
+        currentStep.action && currentStep.action();
+        const msg = typeof currentStep.feedback_correct === 'function'
+          ? currentStep.feedback_correct()
+          : currentStep.feedback_correct;
+        showFeedback(msg, true);
+      } else {
+        const targetObject = findObjectById(currentStep.targetComponent);
+        const targetName = targetObject ? targetObject.userData.name : 'o componente correto';
+        const clickedName = interactiveObject.userData.name || 'uma área não interativa';
+        showFeedback(`Ação incorreta. Interaja com '${targetName}'. Você clicou em '${clickedName}'.`, false);
+      }
+    }
+
+    function handleTroubleshootingClick(interactiveObject) {
+      const step = troubleshootingModuleSteps[currentStepIndex];
+      if (!step) return;
+      if (step.targetComponent === null) return;
+
+      const targetId = (typeof step.targetComponent === 'function')
+        ? step.targetComponent()
+        : step.targetComponent;
+
+      const clickedId = interactiveObject.userData.id;
+
+      if (clickedId === targetId) {
+        step.action && step.action();
+        const msg = (typeof step.feedback_correct === 'function')
+          ? step.feedback_correct()
+          : step.feedback_correct;
+        showFeedback(msg, true);
+      } else {
+        const targetObject = findObjectById(targetId);
+        const targetName = targetObject ? targetObject.userData.name : 'componente correto';
+        const clickedName = interactiveObject.userData.name || 'área não interativa';
+        showFeedback(`Diagnóstico/ação incorreta. Interaja com '${targetName}'. Você clicou em '${clickedName}'.`, false);
+      }
+    }
+
+    function handleMaintenanceClick(interactiveObject) {
+      const step = maintenanceModuleSteps[currentStepIndex];
+      if (!step) return;
+      if (step.targetComponent === null) return;
+
+      const targetId = (typeof step.targetComponent === 'function')
+        ? step.targetComponent()
+        : step.targetComponent;
+
+      const clickedId = interactiveObject.userData.id;
+
+      if (clickedId === targetId) {
+        step.action && step.action();
+        const msg = (typeof step.feedback_correct === 'function')
+          ? step.feedback_correct()
+          : step.feedback_correct;
+        showFeedback(msg, true);
+      } else {
+        const targetObject = findObjectById(targetId);
+        const targetName = targetObject ? targetObject.userData.name : 'componente correto';
+        const clickedName = interactiveObject.userData.name || 'área não interativa';
+        showFeedback(`Passo incorreto. Interaja com '${targetName}'. Você clicou em '${clickedName}'.`, false);
+      }
+    }
+
+    function onClick() {
+      const rect = renderer.domElement.getBoundingClientRect();
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      if (intersects.length === 0) return;
+      const interactiveObject = getInteractiveParent(intersects[0].object);
+      if (!interactiveObject) return;
+
+      if (activeModule === 'startup') {
+        handleStartupClick(interactiveObject);
+      } else if (activeModule === 'operation') {
+        handleOperationClick(interactiveObject);
+      } else if (activeModule === 'troubleshooting') {
+        handleTroubleshootingClick(interactiveObject);
+      } else if (activeModule === 'maintenance') {
+        handleMaintenanceClick(interactiveObject);
+      } else if (activeModule === 'familiarization') {
+        const { id, name } = interactiveObject.userData;
+        const description = componentData[id]?.description || 'Informação detalhada não disponível.';
+        componentInfo.innerHTML = `<h4 class="font-semibold text-lg text-cyan-400">${name}</h4><p class="mt-2 text-sm">${description}</p>`;
+      }
+    }
+
+    // --- RENDER / VISUAIS ---
+    function updateVisuals() {
+      const breaker = findObjectById('main_breaker');
+      if (breaker) breaker.material = componentStates.main_breaker_on ? materials.breaker_on : materials.breaker_off;
+
+      const v10 = findObjectById('valve_v10');
+      if (v10) v10.material = componentStates.valve_v10_open ? materials.valve_open : materials.valve_closed;
+
+      const v11 = findObjectById('valve_v11');
+      if (v11) v11.material = componentStates.valve_v11_open ? materials.valve_open : materials.valve_closed;
+
+      const blower = findObjectById('blower');
+      if (blower) blower.material = componentStates.blower_on ? materials.blower_on : materials.blower;
+
+      if (waterMesh) waterMesh.visible = componentStates.tank_filled;
+    }
+
+    function updateDataPanel() {
+      // Status
+      if (componentStates.main_breaker_on) {
+        dataStatus.textContent = 'LIGADO';
+        dataStatus.className = 'font-mono font-bold data-value text-right value-normal';
+      } else {
+        dataStatus.textContent = 'ISOLADO';
+        dataStatus.className = 'font-mono font-bold data-value text-right text-red-500';
+      }
+
+      // Pressão
+      let pressure = parseFloat(dataPressure.textContent);
+      const baseTarget = (componentStates.blower_on && componentStates.valve_v10_open && componentStates.valve_v11_open) ? 0.25 : 0.0;
+      pressure += (baseTarget - pressure) * 0.1;
+      let pressureDisplay = `${pressure.toFixed(2)} bar`;
+      if (activeModule === 'troubleshooting') {
+        const sim = getSimulatedPressure();
+        pressureDisplay = `${sim.toFixed(2)} bar`;
+      }
+      // Cloro (operação ou falha de cloro)
+      const showCl = (activeModule === 'operation' || componentStates.fault_code === 'CLORO_BAIXO')
+        ? ` | Cloro: ${componentStates.chlorine_residual?.toFixed(2) || '0.00'} mg/L` : '';
+
+      // Badge Manutenção quando no M5
+      let showMaint = '';
+      if (activeModule === 'maintenance') {
+        const due = componentStates.service_due || {};
+        const tag =
+          (due.monthly ? 'Mensal DEVIDA ' : '') +
+          (due.semiannual ? '| 6-Mensal DEVIDA ' : '') +
+          (due.annual ? '| Anual DEVIDA' : '');
+        if (tag.trim()) showMaint = ` | Manutenção: ${tag.trim()}`;
+      }
+
+      dataPressure.textContent = pressureDisplay + showCl + showMaint;
+      dataPressure.className = `font-mono font-bold data-value text-right ${parseFloat(pressureDisplay) > 0.1 ? 'value-normal' : 'value-off'}`;
+
+      // Nível do tanque
+      let level = parseFloat(dataLevel.textContent);
+      const targetLevel = (activeModule === 'operation')
+        ? (componentStates.tankLevelPct || 100)
+        : (componentStates.tank_filled ? 100.0 : 0.0);
+      level += (targetLevel - level) * 0.05;
+      dataLevel.textContent = `${level.toFixed(0)} %`;
+      dataLevel.className = `font-mono font-bold data-value text-right ${level > 10 ? 'value-normal' : 'value-off'}`;
+    }
+
+    function updateHover() {
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      const obj = intersects.length > 0 ? getInteractiveParent(intersects[0].object) : null;
+
+      if (hovered !== obj) {
+        if (hovered && hovered.userData._origMaterial) {
+          hovered.material = hovered.userData._origMaterial;
+          hovered.userData._origMaterial = null;
+        }
+        hovered = obj;
+        if (hovered) {
+          hovered.userData._origMaterial = hovered.material;
+          hovered.material = materials.hover;
+          renderer.domElement.style.cursor = 'pointer';
+        } else {
+          renderer.domElement.style.cursor = 'default';
+        }
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      updateHover();
+      updateVisuals();
+      updateDataPanel();
+      renderer.render(scene, camera);
+    }
+
+    // Eventos de UI
+    navButtons.forEach(button => {
+      button.addEventListener('click', () => switchModule(button.dataset.module));
+    });
+
+    function onWindowResize() {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    function onMouseMove(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+
+    // --- INICIALIZAÇÃO ---
+    init();
+    switchModule('familiarization');
+  </script>
+</body>
+</html>

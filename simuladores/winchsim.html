@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Guincho KAS-15-H-TR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .led {
+            transition: all 0.3s ease;
+            box-shadow: 0 0 2px #000;
+        }
+        .led-green { background-color: #2a632d; box-shadow: 0 0 10px #2a632d; }
+        .led-green.on { background-color: #48ff51; box-shadow: 0 0 15px #48ff51; }
+        .led-red { background-color: #632a2a; box-shadow: 0 0 10px #632a2a; }
+        .led-red.on { background-color: #ff4848; box-shadow: 0 0 15px #ff4848; }
+        .led-amber { background-color: #7a5f1a; box-shadow: 0 0 10px #7a5f1a; }
+        .led-amber.on { background-color: #ffc848; box-shadow: 0 0 15px #ffc848; }
+        
+        .joystick-base {
+            background: radial-gradient(circle at 50% 50%, #555 0%, #222 100%);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .joystick-handle {
+            background: radial-gradient(circle at 50% 30%, #ddd, #888);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.7);
+            cursor: grab;
+            transition: transform 0.1s linear;
+        }
+        .joystick-handle:active {
+            cursor: grabbing;
+        }
+
+        .btn-control {
+            background-color: #4a5568;
+            border-bottom: 4px solid #2d3748;
+            transition: all 0.1s ease-in-out;
+        }
+        .btn-control:active, .btn-control.active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+            filter: brightness(1.2);
+            background-color: #2b6cb0;
+            border-color: #2c5282;
+        }
+        .btn-control:disabled {
+            background-color: #2d3748;
+            border-bottom-color: #1a202c;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .btn-emergency {
+            background-color: #c53030;
+            border-bottom: 4px solid #742a2a;
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
+        }
+        .btn-emergency:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+         .btn-quick-release {
+            background-color: #dd6b20;
+            border-bottom: 4px solid #9c4221;
+            color: white;
+        }
+        .btn-quick-release.active, .btn-quick-release:active {
+             background-color: #f6ad55;
+             border-color: #dd6b20;
+             transform: translateY(2px);
+             border-bottom-width: 2px;
+        }
+        canvas {
+            background-color: #87CEEB; /* Sky blue */
+            border-radius: 0.5rem;
+            border: 2px solid #4a5568;
+        }
+    </style>
+</head>
+<body class="bg-gray-800 text-gray-200 p-4">
+
+    <div class="max-w-7xl mx-auto bg-gray-900 border-4 border-gray-700 rounded-lg shadow-2xl p-4">
+        <header class="text-center mb-4 border-b-2 border-gray-700 pb-2">
+            <h1 class="text-2xl font-bold font-orbitron text-cyan-300">PAINEL DE SIMULAÇÃO E DIAGNÓSTICO</h1>
+            <h2 class="text-lg text-gray-400">Guincho Eletro-Hidráulico KAS-15-H-TR</h2>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            
+            <!-- PAINEL DE STATUS E ALARMES -->
+            <div class="lg:col-span-1 bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <h3 class="font-bold text-lg mb-4 text-center font-orbitron">STATUS DO SISTEMA</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center bg-gray-700 p-2 rounded">
+                        <span>MODO DE OPERAÇÃO</span>
+                        <span id="label-mode" class="font-bold text-cyan-400">TAMBOR</span>
+                    </div>
+                    <div class="bg-gray-700 p-2 rounded space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span>BOMBA HIDRÁULICA 1</span>
+                            <button id="btn-pump-1" class="btn-control text-xs px-2 py-1 rounded">OFF</button>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>BOMBA HIDRÁULICA 2</span>
+                            <button id="btn-pump-2" class="btn-control text-xs px-2 py-1 rounded">OFF</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-700 p-2 rounded">
+                        <span>VELOCIDADE</span>
+                        <span id="label-speed" class="font-bold text-cyan-400">BAIXA</span>
+                    </div>
+                    <hr class="border-gray-600 my-4">
+                    <!-- SISTEMA PNEUMÁTICO -->
+                    <h4 class="font-bold text-center font-orbitron">SISTEMA PNEUMÁTICO</h4>
+                    <div class="flex justify-between items-center bg-gray-700 p-2 rounded">
+                        <span>PRESSÃO DE AR</span>
+                        <span id="readout-air-pressure" class="font-bold text-cyan-400">0.0</span> bar
+                    </div>
+                    <div class="bg-gray-700 p-2 rounded space-y-2 mt-2">
+                        <div class="flex justify-between items-center text-sm">
+                            <span>COMPRESSOR 1</span>
+                            <div class="flex gap-1">
+                                <button id="btn-comp1-power" class="btn-control text-xs px-2 py-1 rounded">DESL.</button>
+                                <button id="btn-comp1-auto" class="btn-control text-xs px-2 py-1 rounded">MANUAL</button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span>COMPRESSOR 2</span>
+                             <div class="flex gap-1">
+                                <button id="btn-comp2-power" class="btn-control text-xs px-2 py-1 rounded">DESL.</button>
+                                <button id="btn-comp2-auto" class="btn-control text-xs px-2 py-1 rounded">MANUAL</button>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="border-gray-600 my-4">
+                    <h4 class="font-bold text-lg text-center font-orbitron text-red-400">ALARMES</h4>
+                    <div class="flex justify-between items-center bg-gray-700 p-2 rounded">
+                        <span>PARADA DE EMERGÊNCIA</span>
+                        <div id="led-emergency" class="led led-red w-6 h-6 rounded-full"></div>
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-700 p-2 rounded">
+                        <span>FALHA GERAL DO SISTEMA</span>
+                        <div id="led-general-fault" class="led led-red w-6 h-6 rounded-full"></div>
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-700 p-2 rounded">
+                        <span>BAIXO NÍVEL ÓLEO HIDR.</span>
+                        <div id="led-low-oil" class="led led-amber w-6 h-6 rounded-full"></div>
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-700 p-2 rounded">
+                        <span>ALTA TEMP. ÓLEO HIDR.</span>
+                        <div id="led-high-temp" class="led led-amber w-6 h-6 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAINEL CENTRAL DE VISUALIZAÇÃO -->
+            <div class="lg:col-span-2 bg-gray-800 p-4 rounded-lg border border-gray-700 flex flex-col justify-between">
+                <h3 class="font-bold text-lg mb-4 text-center font-orbitron">VISUALIZAÇÃO OPERACIONAL</h3>
+                <div class="flex-grow flex items-center justify-center aspect-video">
+                    <canvas id="simulation-canvas"></canvas>
+                </div>
+                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+                    <div class="bg-gray-900 p-3 rounded-lg text-center">
+                        <div class="text-sm text-gray-400">PRESSÃO HIDR.</div>
+                        <div id="readout-pressure" class="text-2xl font-orbitron text-cyan-300">0</div>
+                        <div class="text-xs text-gray-500">bar</div>
+                    </div>
+                    <div class="bg-gray-900 p-3 rounded-lg text-center">
+                        <div class="text-sm text-gray-400">TENSÃO NO CABO</div>
+                        <div id="readout-tension" class="text-2xl font-orbitron text-cyan-300">0.0</div>
+                        <div class="text-xs text-gray-500">ton</div>
+                    </div>
+                    <div class="bg-gray-900 p-3 rounded-lg text-center">
+                        <div class="text-sm text-gray-400">CABO LIBERADO</div>
+                        <div id="readout-payout" class="text-2xl font-orbitron text-cyan-300">50</div>
+                        <div class="text-xs text-gray-500">m</div>
+                    </div>
+                    <div class="bg-gray-900 p-3 rounded-lg text-center">
+                        <div class="text-sm text-gray-400">FREIO APLICADO</div>
+                        <div id="readout-brake" class="text-2xl font-orbitron text-cyan-300">100</div>
+                        <div class="text-xs text-gray-500">%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAINEL DE CONTROLES -->
+            <div class="lg:col-span-1 bg-gray-800 p-4 rounded-lg border border-gray-700">
+                 <h3 class="font-bold text-lg mb-4 text-center font-orbitron">PAINEL DE CONTROLE</h3>
+                 
+                 <div class="mb-4">
+                     <label class="mb-2 text-sm text-center block">SELETOR DE MODO</label>
+                     <div class="grid grid-cols-2 gap-2 text-xs">
+                         <button data-mode="DRUM" class="btn-control mode-selector p-2 rounded-md font-semibold active">TAMBOR</button>
+                         <button data-mode="BRAKE" class="btn-control mode-selector p-2 rounded-md font-semibold">FREIO</button>
+                         <button data-mode="WARPING" class="btn-control mode-selector p-2 rounded-md font-semibold">SAIA</button>
+                         <button data-mode="ANCHOR" class="btn-control mode-selector p-2 rounded-md font-semibold">FUNDEIO</button>
+                     </div>
+                 </div>
+
+                 <div class="grid grid-cols-2 gap-4">
+                    <div class="flex flex-col items-center">
+                        <label class="mb-2 text-sm">PUXAR / LARGAR</label>
+                        <div id="joy-hid-base" class="joystick-base w-24 h-24 rounded-full flex items-center justify-center">
+                            <div id="joy-hid-handle" class="joystick-handle w-12 h-12 rounded-full"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <label class="mb-2 text-sm">CONTROLE FREIO</label>
+                         <div id="joy-pneu-base" class="joystick-base w-24 h-24 rounded-full flex items-center justify-center">
+                            <div id="joy-pneu-handle" class="joystick-handle w-12 h-12 rounded-full"></div>
+                        </div>
+                    </div>
+                 </div>
+                 <hr class="border-gray-600 my-4">
+                 <div class="grid grid-cols-2 gap-2 text-sm">
+                    <button id="btn-clutch-drum" class="btn-control p-3 rounded-md font-semibold col-span-2">EMBREAGEM TAMBOR</button>
+                    <button id="btn-speed" class="btn-control p-3 rounded-md font-semibold">VELOCIDADE</button>
+                    <button id="btn-quick-release" class="btn-control btn-quick-release p-3 rounded-md font-semibold">QUICK RELEASE</button>
+                 </div>
+                 <hr class="border-gray-600 my-4">
+                 <button id="btn-emergency" class="btn-emergency w-full p-4 rounded-lg font-bold text-lg">PARADA DE EMERGÊNCIA</button>
+            </div>
+
+            <!-- PAINEL DE INJEÇÃO DE FALHAS -->
+            <div class="lg:col-span-4 bg-gray-700 p-4 rounded-lg border border-gray-600">
+                <h3 class="font-bold text-lg mb-4 text-center font-orbitron text-amber-300">PAINEL DO CHEFE DE MÁQUINAS (INJEÇÃO DE FALHAS)</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
+                    <button data-fault="SOLENOID_Y1_FAIL" class="btn-control p-2 bg-amber-800 border-amber-900 rounded-md">FALHA Solenoide Y1</button>
+                    <button data-fault="SOLENOID_Z1_FAIL" class="btn-control p-2 bg-amber-800 border-amber-900 rounded-md">FALHA Solenoide Z1</button>
+                    <button data-fault="MOTOR_LEAK" class="btn-control p-2 bg-amber-800 border-amber-900 rounded-md">Vazamento Motor Hidr.</button>
+                    <button data-fault="CLUTCH_SLIP" class="btn-control p-2 bg-amber-800 border-amber-900 rounded-md">Patinação Embreagem</button>
+                    <button data-fault="BRAKE_FAIL" class="btn-control p-2 bg-amber-800 border-amber-900 rounded-md">Falha Total Freio</button>
+                    <button data-fault="PLC_OUTPUT_FAIL" class="btn-control p-2 bg-amber-800 border-amber-900 rounded-md">Falha Saída PLC (Vel.)</button>
+                    <button data-fault="PRESSURE_SENSOR_FAIL" class="btn-control p-2 bg-amber-800 border-amber-900 rounded-md">Falha Sensor Pressão</button>
+                    <button data-fault="LOW_OIL" class="btn-control p-2 bg-amber-800 border-amber-900 rounded-md">Simular Nível Baixo Óleo</button>
+                    <button data-fault="HIGH_TEMP" class="btn-control p-2 bg-amber-800 border-amber-900 rounded-md">Simular Temp. Alta Óleo</button>
+                    <button id="btn-reset-faults" class="btn-control p-2 bg-cyan-700 border-cyan-800 rounded-md col-span-full mt-2 font-bold">REINICIAR TODAS AS FALHAS</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+/*
+* Simulador de Guincho KAS-15-H-TR
+* Autor: Jossian Brito
+* Data: 2025-09-18 09:57
+* Versão: 6.3
+*
+* Modificações da Versão 6.3:
+* - Implementada a animação de rotação do tambor do guincho na visualização operacional.
+* - Adicionado um indicador visual (uma linha branca) que gira com o tambor para mostrar a direção e velocidade do movimento.
+* - A quantidade de cabo no tambor agora é representada visualmente, aumentando ou diminuindo o diâmetro do enrolamento de cabo conforme a operação.
+* - O ponto de partida do cabo foi ajustado para se originar realisticamente do topo do enrolamento de cabo, tornando a animação mais fiel.
+*/
+document.addEventListener('DOMContentLoaded', () => {
+    // --- CANVAS SETUP ---
+    const canvas = document.getElementById('simulation-canvas');
+    const ctx = canvas.getContext('2d');
+    let canvasWidth, canvasHeight, simulationTime = 0;
+
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        canvasWidth = canvas.width;
+        canvasHeight = canvas.height;
+        state.scene.tug.x = canvasWidth * 0.2;
+        state.scene.ship.x = canvasWidth * 0.9;
+        initializeRope();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // --- ESTADO DO SIMULADOR ---
+    const state = {
+        power: true,
+        emergencyStop: false,
+        quickRelease: false,
+        operationMode: 'DRUM',
+        speedMode: 'LOW',
+        drum: { clutch: false, cablePayout: 100, cableSpeed: 0, tension: 0, rotation: 0 },
+        brakeApplied: 100,
+        hydraulics: { pumps: { p1: false, p2: false }, pressure: 0, temperature: 60, oilLevel: 90 },
+        pneumatics: {
+            pressure: 0,
+            compressor1: { running: false, mode: 'MANUAL' },
+            compressor2: { running: false, mode: 'MANUAL' },
+        },
+        inputs: { joyHid: { y: 0 }, joyBrake: { y: 0 } },
+        faults: {},
+        scene: {
+            tug: { x: 150, y: 0, width: 200, height: 100 },
+            ship: { x: 750, y: 0, width: 250, height: 180 },
+            winchPos: { x: 75, y: -48 }
+        }
+    };
+
+    // --- PARÂMETROS DE CONFIGURAÇÃO ---
+    const config = {
+        maxPressure: 250, workPressure: 200, holdingCapacity: 120, maxTensionLowSpeed: 15,
+        maxTensionHighSpeed: 4.5, maxSpeedLowSpeed: 10, maxSpeedHighSpeed: 30,
+        maxCablePayout: 400, minCablePayout: 40, tempAlarmThreshold: 90,
+        lowOilAlarmThreshold: 40, simulationInterval: 33, // ~30 FPS
+        dualPumpBonus: 1.2,
+        airPressureMax: 13,
+        airPressureMin: 10,
+        airPressureRate: 0.05,
+        airClutchConsumption: 0.5,
+        minAirPressureForClutch: 8,
+    };
+    
+    // --- FÍSICA E ANIMAÇÃO DO CABO ---
+    const physics = {
+        gravity: 0.2, friction: 0.98, ropeSegments: 50, stiffness: 0.2,
+        swell: {
+            tug: { amplitude: 3, frequency: 0.03 },
+            ship: { amplitude: 2, frequency: 0.025, phase: Math.PI }
+        }
+    };
+    let ropePoints = [];
+
+    function initializeRope() {
+        ropePoints = [];
+        const startX = state.scene.tug.x + state.scene.winchPos.x;
+        const startY = canvasHeight * 0.75 + state.scene.winchPos.y;
+        const endX = state.scene.ship.x - state.scene.ship.width / 2;
+        const endY = canvasHeight * 0.7;
+        
+        for (let i = 0; i <= physics.ropeSegments; i++) {
+            const t = i / physics.ropeSegments;
+            ropePoints.push({
+                x: startX + (endX - startX) * t,
+                y: startY + (endY - startY) * t,
+                oldX: startX + (endX - startX) * t,
+                oldY: startY + (endY - startY) * t,
+            });
+        }
+    }
+
+    function updatePhysics() {
+        simulationTime++;
+        state.scene.tug.y = Math.sin(simulationTime * physics.swell.tug.frequency) * physics.swell.tug.amplitude;
+        state.scene.ship.y = Math.sin(simulationTime * physics.swell.ship.frequency + physics.swell.ship.phase) * physics.swell.ship.amplitude;
+
+        for (let i = 1; i < ropePoints.length -1; i++) {
+            let p = ropePoints[i];
+            let vx = (p.x - p.oldX) * physics.friction;
+            let vy = (p.y - p.oldY) * physics.friction;
+            p.oldX = p.x; p.oldY = p.y;
+            p.x += vx; p.y += vy; p.y += physics.gravity;
+        }
+
+        const segmentRestLength = state.drum.cablePayout / physics.ropeSegments;
+        for (let k = 0; k < 10; k++) {
+            // Recalcula o raio do cabo no tambor para ajustar o ponto de partida do cabo de reboque.
+            const drumBaseRadius = 5;
+            const drumMaxRadius = 12;
+            const cableFillRatio = (config.maxCablePayout - state.drum.cablePayout) / (config.maxCablePayout - config.minCablePayout);
+            const currentCableRadius = drumBaseRadius + (drumMaxRadius - drumBaseRadius) * Math.max(0, Math.min(1, cableFillRatio));
+
+            const tugBaseY = canvasHeight * 0.75;
+            const winchBaseY = tugBaseY + state.scene.winchPos.y;
+            const drumCenterY = winchBaseY - 5;
+
+            // Ponto de partida do cabo (tangente ao topo do enrolamento do guincho)
+            ropePoints[0].x = state.scene.tug.x + state.scene.winchPos.x;
+            ropePoints[0].y = drumCenterY - currentCableRadius + state.scene.tug.y;
+            
+            // Ponto final do cabo (no navio)
+            ropePoints[ropePoints.length - 1].x = state.scene.ship.x - state.scene.ship.width / 2;
+            ropePoints[ropePoints.length - 1].y = canvasHeight * 0.7 + state.scene.ship.y;
+            
+            for (let i = 0; i < ropePoints.length - 1; i++) {
+                let p1 = ropePoints[i]; let p2 = ropePoints[i + 1];
+                let dx = p2.x - p1.x; let dy = p2.y - p1.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                let difference = segmentRestLength - distance;
+                let percent = (difference / distance) * (distance > segmentRestLength ? physics.stiffness : 0.5);
+                let offsetX = dx * percent; let offsetY = dy * percent;
+
+                if (i !== 0) {
+                    p1.x -= offsetX; p1.y -= offsetY;
+                }
+                if (i < ropePoints.length - 2) {
+                    p2.x += offsetX; p2.y += offsetY;
+                }
+            }
+        }
+        
+        const firstSegment = ropePoints[0];
+        const secondSegment = ropePoints[1];
+        const dx = secondSegment.x - firstSegment.x;
+        const dy = secondSegment.y - firstSegment.y;
+        const currentLength = Math.sqrt(dx*dx + dy*dy);
+        const stretch = currentLength - segmentRestLength;
+        state.drum.tension = stretch > 0 ? (stretch * physics.stiffness * physics.ropeSegments) / 5 : 0;
+    }
+    
+    // --- DOM REFERENCES ---
+    const dom = {
+        leds: { emergency: document.getElementById('led-emergency'), generalFault: document.getElementById('led-general-fault'), lowOil: document.getElementById('led-low-oil'), highTemp: document.getElementById('led-high-temp') },
+        labels: { mode: document.getElementById('label-mode'), speed: document.getElementById('label-speed') },
+        readouts: {
+            pressure: document.getElementById('readout-pressure'), tension: document.getElementById('readout-tension'), payout: document.getElementById('readout-payout'), brake: document.getElementById('readout-brake'),
+            airPressure: document.getElementById('readout-air-pressure')
+        },
+        buttons: {
+            clutchDrum: document.getElementById('btn-clutch-drum'), pump1: document.getElementById('btn-pump-1'), pump2: document.getElementById('btn-pump-2'),
+            speed: document.getElementById('btn-speed'), emergency: document.getElementById('btn-emergency'), quickRelease: document.getElementById('btn-quick-release'), resetFaults: document.getElementById('btn-reset-faults'),
+            comp1Power: document.getElementById('btn-comp1-power'), comp1Auto: document.getElementById('btn-comp1-auto'),
+            comp2Power: document.getElementById('btn-comp2-power'), comp2Auto: document.getElementById('btn-comp2-auto'),
+        },
+        joysticks: { hidBase: document.getElementById('joy-hid-base'), hidHandle: document.getElementById('joy-hid-handle'), pneuBase: document.getElementById('joy-pneu-base'), pneuHandle: document.getElementById('joy-pneu-handle') },
+        faultButtons: document.querySelectorAll('[data-fault]'),
+        modeSelectors: document.querySelectorAll('.mode-selector'),
+    };
+    
+    // --- JOYSTICK SETUP ---
+    function setupJoystick(base, handle, stateRef) {
+        let isDragging = false;
+        const startDrag = (e) => { isDragging = true; handle.style.cursor = 'grabbing'; };
+        const endDrag = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            handle.style.transform = `translate(0px, 0px)`;
+            handle.style.cursor = 'grab';
+            stateRef.y = 0;
+        };
+        const onDrag = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const rect = base.getBoundingClientRect();
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            if (clientY === undefined) return;
+            let y = clientY - rect.top - rect.height / 2;
+            const maxDist = rect.width / 2 - handle.offsetWidth / 2;
+            y = Math.max(-maxDist, Math.min(maxDist, y));
+            handle.style.transform = `translate(0px, ${y}px)`;
+            stateRef.y = -(y / maxDist) * 100;
+        };
+        handle.addEventListener('mousedown', startDrag);
+        window.addEventListener('mouseup', endDrag);
+        window.addEventListener('mousemove', onDrag);
+        handle.addEventListener('touchstart', startDrag, { passive: false });
+        window.addEventListener('touchend', endDrag);
+        window.addEventListener('touchmove', onDrag, { passive: false });
+    }
+    setupJoystick(dom.joysticks.hidBase, dom.joysticks.hidHandle, state.inputs.joyHid);
+    setupJoystick(dom.joysticks.pneuBase, dom.joysticks.pneuHandle, state.inputs.joyBrake);
+
+    // --- Pneumatics Logic ---
+    function updatePneumatics() {
+        const { pneumatics } = state;
+        const { compressor1, compressor2 } = pneumatics;
+        if (compressor1.mode === 'AUTO') {
+            if (pneumatics.pressure < config.airPressureMin) compressor1.running = true;
+            if (pneumatics.pressure >= config.airPressureMax) compressor1.running = false;
+        }
+        if (compressor2.mode === 'AUTO') {
+            if (pneumatics.pressure < config.airPressureMin) compressor2.running = true;
+            if (pneumatics.pressure >= config.airPressureMax) compressor2.running = false;
+        }
+        if (compressor1.running) pneumatics.pressure += config.airPressureRate;
+        if (compressor2.running) pneumatics.pressure += config.airPressureRate;
+        pneumatics.pressure *= 0.9995;
+        pneumatics.pressure = Math.max(0, Math.min(config.airPressureMax + 1, pneumatics.pressure));
+    }
+
+    // --- SIMULATION LOGIC ---
+    function simulationLoop() {
+        if (!state.power) return;
+        
+        updatePneumatics();
+
+        const joyHidY = state.emergencyStop ? 0 : state.inputs.joyHid.y;
+        const joyBrakeY = state.emergencyStop ? 0 : state.inputs.joyBrake.y;
+        let targetSpeed = 0;
+        const pumpsActive = state.hydraulics.pumps.p1 || state.hydraulics.pumps.p2;
+        if (!pumpsActive) { state.hydraulics.pressure *= 0.9; }
+
+        switch (state.operationMode) {
+            case 'DRUM':
+                const isOperating = state.drum.clutch && Math.abs(joyHidY) > 5 && pumpsActive;
+                state.brakeApplied = isOperating ? 0 : 100;
+                if (isOperating) {
+                    let maxSpeed = state.speedMode === 'HIGH' ? config.maxSpeedHighSpeed : config.maxSpeedLowSpeed;
+                    if (state.faults.PLC_OUTPUT_FAIL) maxSpeed = config.maxSpeedLowSpeed;
+                    const speedCommand = joyHidY / 100;
+                    if ((state.faults.SOLENOID_Y1_FAIL && speedCommand > 0) || (state.faults.SOLENOID_Z1_FAIL && speedCommand < 0)) {
+                         targetSpeed = 0;
+                    } else { targetSpeed = speedCommand * maxSpeed; }
+                    
+                    targetSpeed *= Math.max(0.1, 1 - (state.drum.tension / (config.holdingCapacity * 1.5)));
+
+                    const loadFactor = Math.min(1, Math.abs(speedCommand) + (state.drum.tension / 20));
+                    let currentWorkPressure = config.workPressure;
+                    if (state.hydraulics.pumps.p1 && state.hydraulics.pumps.p2) { currentWorkPressure *= config.dualPumpBonus; }
+                    state.hydraulics.pressure = currentWorkPressure * loadFactor;
+                    if (state.faults.MOTOR_LEAK) { targetSpeed *= 0.6; state.hydraulics.pressure *= 0.7; state.hydraulics.temperature += 0.1; }
+                    if (state.faults.CLUTCH_SLIP) { targetSpeed *= 0.5; }
+                } else if (pumpsActive) { state.hydraulics.pressure *= 0.9; }
+                break;
+            case 'BRAKE':
+                state.drum.clutch = false; 
+                state.hydraulics.pumps.p1 = false; state.hydraulics.pumps.p2 = false;
+                state.brakeApplied = 100 - Math.max(0, joyBrakeY);
+                const brakeHoldingForce = (state.brakeApplied / 100) * config.holdingCapacity;
+                if (state.drum.tension > brakeHoldingForce) {
+                    const slipFactor = (state.drum.tension - brakeHoldingForce) / config.holdingCapacity;
+                    targetSpeed = -slipFactor * 10;
+                }
+                break;
+            default:
+                state.brakeApplied = 100; state.drum.clutch = false; state.hydraulics.pressure *= 0.9;
+                break;
+        }
+
+        if (state.quickRelease) state.brakeApplied = 0;
+        if (state.faults.BRAKE_FAIL) state.brakeApplied = 0;
+        if (state.emergencyStop) { state.brakeApplied = 100; targetSpeed = 0; state.hydraulics.pressure = 0;}
+        
+        state.drum.cableSpeed = targetSpeed;
+        const payoutChange = (state.drum.cableSpeed * (config.simulationInterval / 60000));
+        state.drum.cablePayout -= payoutChange;
+        state.drum.cablePayout = Math.max(config.minCablePayout, Math.min(config.maxCablePayout, state.drum.cablePayout));
+        // A rotação do tambor é acumulada para a animação. O sinal negativo é para que "puxar" (joystick para cima, joyHid.y > 0, targetSpeed > 0) resulte em rotação horária.
+        state.drum.rotation -= state.drum.cableSpeed * 0.1;
+
+        if (state.drum.cableSpeed > 5 && state.drum.tension > 1) { 
+            state.scene.ship.x -= state.drum.tension * 0.01;
+        }
+        state.scene.ship.x += 0.05;
+        
+        if(state.hydraulics.pressure < 10) state.hydraulics.temperature -= 0.02;
+        state.hydraulics.temperature = Math.max(50, state.hydraulics.temperature);
+        state.faults.LOW_OIL = state.hydraulics.oilLevel < config.lowOilAlarmThreshold;
+        state.faults.HIGH_TEMP = state.hydraulics.temperature > config.tempAlarmThreshold;
+        
+        updatePhysics(); updateUI(); drawCanvas();
+    }
+    
+    // --- UI UPDATE ---
+    function updateUI() {
+        dom.leds.emergency.classList.toggle('on', state.emergencyStop);
+        dom.leds.lowOil.classList.toggle('on', state.faults.LOW_OIL);
+        dom.leds.highTemp.classList.toggle('on', state.faults.HIGH_TEMP);
+        let hasFault = Object.values(state.faults).some(f => f === true) && !state.faults.LOW_OIL && !state.faults.HIGH_TEMP;
+        dom.leds.generalFault.classList.toggle('on', hasFault);
+        
+        let pressureReading = state.faults.PRESSURE_SENSOR_FAIL ? config.maxPressure * Math.random() : state.hydraulics.pressure;
+        dom.readouts.pressure.textContent = pressureReading.toFixed(0);
+        dom.readouts.tension.textContent = state.drum.tension.toFixed(1);
+        dom.readouts.payout.textContent = state.drum.cablePayout.toFixed(0);
+        dom.readouts.brake.textContent = state.brakeApplied.toFixed(0);
+
+        dom.labels.mode.textContent = state.operationMode;
+        dom.labels.speed.textContent = state.speedMode === 'HIGH' && !state.faults.PLC_OUTPUT_FAIL ? 'ALTA' : 'BAIXA';
+        
+        dom.buttons.pump1.textContent = state.hydraulics.pumps.p1 ? 'ON' : 'OFF';
+        dom.buttons.pump1.classList.toggle('active', state.hydraulics.pumps.p1);
+        dom.buttons.pump2.textContent = state.hydraulics.pumps.p2 ? 'ON' : 'OFF';
+        dom.buttons.pump2.classList.toggle('active', state.hydraulics.pumps.p2);
+
+        dom.readouts.airPressure.textContent = state.pneumatics.pressure.toFixed(1);
+
+        const { compressor1, compressor2 } = state.pneumatics;
+        dom.buttons.comp1Auto.classList.toggle('active', compressor1.mode === 'AUTO');
+        dom.buttons.comp1Auto.textContent = compressor1.mode === 'AUTO' ? 'AUTO' : 'MANUAL';
+        dom.buttons.comp1Power.classList.toggle('active', compressor1.running);
+        dom.buttons.comp1Power.textContent = compressor1.running ? 'LIGADO' : 'DESL.';
+        dom.buttons.comp1Power.disabled = compressor1.mode === 'AUTO';
+
+        dom.buttons.comp2Auto.classList.toggle('active', compressor2.mode === 'AUTO');
+        dom.buttons.comp2Auto.textContent = compressor2.mode === 'AUTO' ? 'AUTO' : 'MANUAL';
+        dom.buttons.comp2Power.classList.toggle('active', compressor2.running);
+        dom.buttons.comp2Power.textContent = compressor2.running ? 'LIGADO' : 'DESL.';
+        dom.buttons.comp2Power.disabled = compressor2.mode === 'AUTO';
+
+        dom.buttons.clutchDrum.disabled = (state.pneumatics.pressure < config.minAirPressureForClutch && !state.drum.clutch);
+    }
+    
+    // --- DRAWING ---
+    function drawCanvas() {
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        const waterLevel = canvasHeight * 0.75;
+        
+        ctx.fillStyle = '#1E40AF';
+        ctx.fillRect(0, waterLevel, canvasWidth, canvasHeight - waterLevel);
+
+        const ship = state.scene.ship;
+        const shipBaseY = waterLevel + ship.y;
+        ctx.fillStyle = '#6B7280';
+        ctx.beginPath();
+        ctx.moveTo(ship.x - ship.width / 2, shipBaseY - ship.height * 0.2);
+        ctx.lineTo(ship.x + ship.width / 2, shipBaseY - ship.height * 0.2);
+        ctx.lineTo(ship.x + ship.width / 2 - 20, shipBaseY);
+        ctx.lineTo(ship.x - ship.width / 2, shipBaseY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#B91C1C';
+        ctx.fillRect(ship.x - ship.width / 2, shipBaseY, ship.width-20, 20);
+        ctx.fillStyle = '#F3F4F6';
+        ctx.fillRect(ship.x + ship.width/2 - 80, shipBaseY - ship.height * 0.6, 60, ship.height * 0.4);
+        for(let i=0; i<4; i++){
+            for(let j=0; j<3; j++){
+                ctx.fillStyle = ['#DC2626', '#1D4ED8', '#059669'][i%3];
+                ctx.fillRect(ship.x - ship.width / 2 + 10 + i*55, shipBaseY - ship.height * 0.2 - (j+1)*20, 50, 18);
+            }
+        }
+
+        const tug = state.scene.tug;
+        const tugBaseY = waterLevel + tug.y;
+        ctx.fillStyle = '#4B5563';
+        ctx.beginPath();
+        ctx.moveTo(tug.x - tug.width / 2, tugBaseY);
+        ctx.lineTo(tug.x + tug.width / 2, tugBaseY);
+        ctx.lineTo(tug.x + tug.width / 2, tugBaseY + 25);
+        ctx.quadraticCurveTo(tug.x, tugBaseY + 35, tug.x - tug.width/2, tugBaseY+25);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#DC2626';
+        ctx.beginPath();
+        ctx.moveTo(tug.x - tug.width / 2, tugBaseY);
+        ctx.lineTo(tug.x - tug.width / 2, tugBaseY - 20);
+        ctx.lineTo(tug.x - tug.width / 2 + 20, tugBaseY - 35);
+        ctx.lineTo(tug.x + tug.width / 2 - 10, tugBaseY - 35);
+        ctx.lineTo(tug.x + tug.width / 2, tugBaseY - 25);
+        ctx.lineTo(tug.x + tug.width / 2, tugBaseY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#F9FAFB';
+        ctx.beginPath();
+        ctx.moveTo(tug.x - 30, tugBaseY - 35);
+        ctx.lineTo(tug.x - 40, tugBaseY - 80);
+        ctx.lineTo(tug.x + 40, tugBaseY - 80);
+        ctx.lineTo(tug.x + 30, tugBaseY - 35);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#9CA3AF';
+        ctx.fillRect(tug.x - 30, tugBaseY - 75, 60, 15);
+
+        // --- Guincho no Rebocador com Animação ---
+        const winchX = tug.x + state.scene.winchPos.x;
+        const winchY = tugBaseY + state.scene.winchPos.y;
+        const drumCenterY = winchY - 5;
+        const drumBaseRadius = 5;
+        const drumMaxRadius = 12;
+
+        const cableFillRatio = (config.maxCablePayout - state.drum.cablePayout) / (config.maxCablePayout - config.minCablePayout);
+        const currentCableRadius = drumBaseRadius + (drumMaxRadius - drumBaseRadius) * Math.max(0, Math.min(1, cableFillRatio));
+
+        ctx.fillStyle = '#1F2937';
+        ctx.fillRect(winchX - 20, winchY - 15, 40, 20);
+
+        ctx.fillStyle = '#6B7280';
+        ctx.beginPath();
+        ctx.arc(winchX, drumCenterY, drumMaxRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#D97706';
+        ctx.beginPath();
+        ctx.arc(winchX, drumCenterY, currentCableRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        const angle = state.drum.rotation;
+        const indicatorX = winchX + currentCableRadius * Math.cos(angle);
+        const indicatorY = drumCenterY + currentCableRadius * Math.sin(angle);
+        ctx.strokeStyle = '#F9FAFB';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(winchX, drumCenterY);
+        ctx.lineTo(indicatorX, indicatorY);
+        ctx.stroke();
+
+        // --- Desenha Cabo ---
+        ctx.strokeStyle = '#FBBF24';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(ropePoints[0].x, ropePoints[0].y);
+        for (let i = 1; i < ropePoints.length; i++) {
+            const p = ropePoints[i];
+            const prev = ropePoints[i-1];
+            ctx.quadraticCurveTo(prev.x, prev.y, (prev.x + p.x)/2, (prev.y + p.y)/2);
+        }
+        ctx.stroke();
+    }
+
+    // --- EVENT LISTENERS ---
+    dom.buttons.pump1.addEventListener('click', () => {
+        if (state.emergencyStop || state.operationMode === 'BRAKE') return;
+        state.hydraulics.pumps.p1 = !state.hydraulics.pumps.p1;
+    });
+    dom.buttons.pump2.addEventListener('click', () => {
+        if (state.emergencyStop || state.operationMode === 'BRAKE') return;
+        state.hydraulics.pumps.p2 = !state.hydraulics.pumps.p2;
+    });
+    
+    dom.buttons.clutchDrum.addEventListener('click', () => {
+        if (state.emergencyStop || state.operationMode === 'BRAKE') return;
+        if (!state.drum.clutch && state.pneumatics.pressure < config.minAirPressureForClutch) {
+            dom.readouts.airPressure.parentElement.classList.add('bg-red-800');
+            setTimeout(() => dom.readouts.airPressure.parentElement.classList.remove('bg-red-800'), 500);
+            return;
+        }
+        if (!state.drum.clutch) {
+            state.pneumatics.pressure -= config.airClutchConsumption;
+        }
+        state.drum.clutch = !state.drum.clutch;
+        dom.buttons.clutchDrum.classList.toggle('active', state.drum.clutch);
+    });
+
+    dom.modeSelectors.forEach(button => {
+        button.addEventListener('click', () => {
+            if (state.emergencyStop) return;
+            state.operationMode = button.dataset.mode;
+            dom.modeSelectors.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            if (state.operationMode === 'BRAKE') {
+                state.hydraulics.pumps.p1 = false; state.hydraulics.pumps.p2 = false;
+            }
+        });
+    });
+
+    dom.buttons.quickRelease.addEventListener('click', () => {
+        if (state.emergencyStop) return;
+        state.quickRelease = true;
+        dom.buttons.quickRelease.classList.add('active');
+        setTimeout(() => {
+            state.quickRelease = false;
+            dom.buttons.quickRelease.classList.remove('active');
+        }, 1000);
+    });
+    dom.buttons.emergency.addEventListener('click', () => {
+        state.emergencyStop = !state.emergencyStop;
+        if(state.emergencyStop) {
+            state.inputs.joyHid.y = 0; state.inputs.joyBrake.y = 0;
+            dom.joysticks.hidHandle.style.transform = `translate(0px, 0px)`;
+            dom.joysticks.pneuHandle.style.transform = `translate(0px, 0px)`;
+            state.quickRelease = false;
+            dom.buttons.quickRelease.classList.remove('active');
+            state.hydraulics.pumps.p1 = false;
+            state.hydraulics.pumps.p2 = false;
+            state.drum.clutch = false;
+            dom.buttons.clutchDrum.classList.remove('active');
+        }
+    });
+    dom.buttons.speed.addEventListener('click', () => {
+        if (state.emergencyStop) return;
+        state.speedMode = state.speedMode === 'LOW' ? 'HIGH' : 'LOW';
+        dom.buttons.speed.classList.toggle('active');
+    });
+    dom.faultButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const faultName = button.dataset.fault;
+            state.faults[faultName] = !state.faults[faultName];
+            button.classList.toggle('active', state.faults[faultName]);
+            button.classList.toggle('bg-red-600', state.faults[faultName]);
+            button.classList.toggle('bg-amber-800', !state.faults[faultName]);
+            if (faultName === 'LOW_OIL' && state.faults.LOW_OIL) {
+                state.hydraulics.oilLevel = config.lowOilAlarmThreshold - 1;
+            } else if (faultName === 'LOW_OIL') {
+                state.hydraulics.oilLevel = 90;
+            }
+            if (faultName === 'HIGH_TEMP' && state.faults.HIGH_TEMP) {
+                state.hydraulics.temperature = config.tempAlarmThreshold + 1;
+            } else if (faultName === 'HIGH_TEMP') {
+                state.hydraulics.temperature = 60;
+            }
+        });
+    });
+    dom.buttons.resetFaults.addEventListener('click', () => {
+        state.faults = {};
+        state.hydraulics.oilLevel = 90;
+        state.hydraulics.temperature = 60;
+        dom.faultButtons.forEach(button => {
+            button.classList.remove('active', 'bg-red-600');
+            button.classList.add('bg-amber-800');
+        });
+    });
+
+    dom.buttons.comp1Power.addEventListener('click', () => {
+        if (state.pneumatics.compressor1.mode === 'MANUAL') {
+            state.pneumatics.compressor1.running = !state.pneumatics.compressor1.running;
+        }
+    });
+    dom.buttons.comp1Auto.addEventListener('click', () => {
+        state.pneumatics.compressor1.mode = state.pneumatics.compressor1.mode === 'MANUAL' ? 'AUTO' : 'MANUAL';
+        if (state.pneumatics.compressor1.mode === 'MANUAL') {
+            state.pneumatics.compressor1.running = false;
+        }
+    });
+     dom.buttons.comp2Power.addEventListener('click', () => {
+        if (state.pneumatics.compressor2.mode === 'MANUAL') {
+            state.pneumatics.compressor2.running = !state.pneumatics.compressor2.running;
+        }
+    });
+    dom.buttons.comp2Auto.addEventListener('click', () => {
+        state.pneumatics.compressor2.mode = state.pneumatics.compressor2.mode === 'MANUAL' ? 'AUTO' : 'MANUAL';
+         if (state.pneumatics.compressor2.mode === 'MANUAL') {
+            state.pneumatics.compressor2.running = false;
+        }
+    });
+
+
+    // --- INITIALIZATION ---
+    resizeCanvas();
+    setInterval(simulationLoop, config.simulationInterval);
+});
+</script>
+
+</body>
+</html>
+

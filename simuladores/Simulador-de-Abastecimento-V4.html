@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Sistema de Combustível - Rebocador</title>
+    <style>
+        :root {
+            --tank-bg: #e0e0e0;
+            --fuel-color: #ff9800;
+            --valve-closed-bg: #f44336;
+            --valve-open-bg: #4caf50;
+            --pump-off-bg: #757575;
+            --pump-on-bg: #2196f3;
+            --panel-bg: #f5f5f5;
+            --border-color: #bdbdbd;
+            --text-color: #212121;
+            --alarm-bg: #d32f2f;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #004d40;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .simulation-container {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            gap: 20px;
+            align-items: center;
+            width: 100%;
+            max-width: 1024px;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            position: relative;
+            width: 1000px;
+        }
+
+        .panel-rebocador {
+            height: 700px;
+        }
+
+        .panel-caminhao {
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #caminhao-container {
+            position: relative;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: flex-end;
+            width: 100%;
+            padding: 20px 0;
+        }
+
+        .component {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+        }
+        
+        .caminhao-component {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+        }
+
+        .tank {
+            background-color: var(--tank-bg);
+            border: 2px solid #333;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+        
+        .tank.storage { width: 120px; height: 180px; }
+        .tank.service { width: 80px; height: 120px; }
+        .tank.truck   { width: 100px; height: 80px; margin-bottom: 10px; }
+        .tank.overflow { width: 90px; height: 130px; border: 3px dashed #757575; }
+        .tank.sludge { width: 90px; height: 130px; background-color: #424242; }
+
+        .fuel-level {
+            background-color: var(--fuel-color);
+            width: 100%;
+            transition: height 0.2s ease-out;
+        }
+        .fuel-level.sludge { background-color: #212121; }
+        .fuel-level.water { background-color: #64b5f6; }
+
+
+        .label {
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .timer-display {
+            font-size: 10px;
+            background: #333;
+            color: #fff;
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        .volume-display {
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 2px 4px;
+            border-radius: 3px;
+            position: absolute;
+            bottom: 5px;
+            font-weight: 500;
+        }
+
+        .valve, .pump, .equipment {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s ease, background-color 0.2s;
+        }
+        .valve:active, .pump:active, .equipment:active {
+            transform: scale(0.95);
+        }
+
+        .valve { background-color: var(--valve-closed-bg); }
+        .valve.open { background-color: var(--valve-open-bg); }
+
+        .pump { background-color: var(--pump-off-bg); border-radius: 8px; width: 35px; height: 35px;}
+        .pump.on { background-color: var(--pump-on-bg); }
+
+        .equipment {
+            background-color: #9c27b0;
+            border-radius: 8px;
+            width: 35px;
+            height: 35px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .custom-button {
+             padding: 10px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #00796b;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .custom-button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+
+        #btn-sim-toggle {
+            padding: 12px 24px;
+            font-size: 16px;
+            min-width: 120px;
+        }
+        #btn-sim-toggle.running {
+            background-color: #f9a825;
+            color: #000;
+        }
+        
+        /* Painel de Controle Horizontal */
+        .horizontal-control-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #e0e4e7;
+            border-top: 2px solid var(--border-color);
+            border-radius: 0 0 12px 12px;
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 15px;
+            justify-content: center;
+            align-items: flex-start;
+            z-index: 10;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px;
+            background-color: rgba(255,255,255,0.5);
+            border-radius: 8px;
+        }
+        .control-group .label {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            height: 22px; 
+            display: flex;
+            align-items: center;
+            text-align: center;
+        }
+        .equipment-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Alarme */
+        .alarm-banner {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--alarm-bg);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            z-index: 100;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        #alarm-ack-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+
+        /* Estilos do Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal h3 {
+            margin-top: 0;
+            color: #004d40;
+        }
+        .modal p {
+            line-height: 1.6;
+        }
+        .modal-content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .checklist, .selection-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+        }
+        .checklist li, .selection-list li {
+            margin-bottom: 10px;
+        }
+        .checklist label, .selection-list label {
+            cursor: pointer;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .modal-buttons button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .modal-btn-confirm {
+            background-color: #4caf50;
+            color: white;
+        }
+        .modal-btn-cancel {
+            background-color: #f44336;
+            color: white;
+        }
+        #report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        #report-table th, #report-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #report-table th {
+            background-color: #f2f2f2;
+        }
+        .status-ok { color: green; font-weight: bold; }
+        .status-warn { color: orange; font-weight: bold; }
+        .status-fail { color: red; font-weight: bold; }
+
+        /* Bandeja e Derramamento */
+        .drip-tray-area {
+            position: absolute;
+            top: 480px;
+            width: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #drip-tray-area-bb { left: 80px; }
+        #drip-tray-area-be { right: 80px; }
+
+        .drip-tray {
+            width: 120px;
+            height: 40px;
+            border: 2px solid #333;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            display: flex;
+            align-items: flex-end;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .deck-spill {
+            position: absolute;
+            top: 550px;
+            width: 160px;
+            height: 30px;
+            background-color: rgba(255, 25, 0, 0.7);
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+        #deck-spill-bb { left: 60px; }
+        #deck-spill-be { right: 60px; }
+
+        /* Posicionamento dos Componentes no Diagrama */
+        #tk-central { top: 200px; left: 440px; }
+        #tk-df-bb { top: 350px; left: 280px; }
+        #tk-df-be { top: 350px; left: 600px; }
+        #tk-serv-bb { top: 80px; left: 320px; }
+        #tk-serv-be { top: 80px; left: 580px; }
+        #tk-overflow { top: 350px; left: 80px; }
+        #tk-oleo-sujo { top: 350px; left: 830px; }
+        
+    </style>
+</head>
+<footer style="text-align:center; margin-top:20px; font-size:14px; color:#666;">
+  © 2025 - Direitos Autorais Reservados<br>
+  Desenvolvido por <strong>Jossian Costa de Brito</strong>
+</footer>
+
+<body>
+
+    <h1>Simulador de Treinamento - Sistema de Combustível de Rebocador</h1>
+    <p style="text-align: center; margin-top: -5px; color: #555; font-size: 14px;">Autor: Jossian Costa de Brito</p>
+    <div class="controls">
+        <button id="btn-sim-toggle" class="custom-button">Iniciar</button>
+        <button id="btn-reset-sim" class="custom-button" style="background-color: #d32f2f;">Resetar</button>
+    </div>
+
+    <div class="simulation-container">
+        <!-- PAINEL DO REBOCADOR -->
+        <div class="panel panel-rebocador">
+            <h2 style="text-align: center;">Painel do Rebocador</h2>
+            <div id="alarm-notification" class="alarm-banner" style="display: none;">
+                <span id="alarm-text"></span>
+                <button id="alarm-ack-btn" title="Silenciar alarme">&times;</button>
+            </div>
+            
+            <div id="tk-central" class="component"><div class="label">Tanque Central</div><div class="tank storage"><div id="level-central" class="fuel-level"></div><span id="vol-central" class="volume-display"></span></div></div>
+            <div id="tk-df-bb" class="component"><div class="label">Tq. Duplo Fundo BB</div><div class="tank storage"><div id="level-df-bb" class="fuel-level"></div><span id="vol-df-bb" class="volume-display"></span></div></div>
+            <div id="tk-df-be" class="component"><div class="label">Tq. Duplo Fundo BE</div><div class="tank storage"><div id="level-df-be" class="fuel-level"></div><span id="vol-df-be" class="volume-display"></span></div></div>
+            <div id="tk-serv-bb" class="component"><div class="label">Tq. Serviço BB</div><div class="tank service"><div id="level-serv-bb" class="fuel-level"></div><span id="vol-serv-bb" class="volume-display"></span></div></div>
+            <div id="tk-serv-be" class="component"><div class="label">Tq. Serviço BE</div><div class="tank service"><div id="level-serv-be" class="fuel-level"></div><span id="vol-serv-be" class="volume-display"></span></div></div>
+            <div id="tk-overflow" class="component"><div class="label">Tq. Overflow</div><div class="tank overflow"><div id="level-overflow" class="fuel-level"></div><span id="vol-overflow" class="volume-display"></span></div></div>
+            <div id="tk-oleo-sujo" class="component"><div class="label">Tq. Óleo Sujo</div><div class="tank sludge"><div id="level-oleo-sujo" class="fuel-level sludge"></div><span id="vol-oleo-sujo" class="volume-display"></span></div></div>
+            
+            <div id="drip-tray-area-bb" class="component">
+                <button id="valve-rec-cais-bb" class="valve">V</button>
+                <div class="label">Bandeja Contenção BB</div>
+                <div id="drip-tray-bb" class="drip-tray"><div id="level-drip-tray-bb" class="fuel-level"></div></div>
+                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                    <button id="valve-dreno-sujo-bb" class="valve" title="Dreno para Tanque Sujo">S</button>
+                    <button id="valve-dreno-chuva-bb" class="valve" title="Dreno de Chuva">C</button>
+                </div>
+            </div>
+            <div id="drip-tray-area-be" class="component">
+                <button id="valve-rec-cais-be" class="valve">V</button>
+                <div class="label">Bandeja Contenção BE</div>
+                <div id="drip-tray-be" class="drip-tray"><div id="level-drip-tray-be" class="fuel-level"></div></div>
+                 <div style="display: flex; gap: 10px; margin-top: 5px;">
+                    <button id="valve-dreno-sujo-be" class="valve" title="Dreno para Tanque Sujo">S</button>
+                    <button id="valve-dreno-chuva-be" class="valve" title="Dreno de Chuva">C</button>
+                </div>
+            </div>
+            <div id="deck-spill-bb" class="deck-spill"></div>
+            <div id="deck-spill-be" class="deck-spill"></div>
+
+            <div class="horizontal-control-panel">
+                <div class="control-group"><div class="label">Tq. Central</div><button id="valve-tk-central" class="valve">V</button></div>
+                <div class="control-group"><div class="label">Tq. DF BB</div><button id="valve-tk-dfbb" class="valve">V</button></div>
+                <div class="control-group"><div class="label">Tq. DF BE</div><button id="valve-tk-dfbe" class="valve">V</button></div>
+                <div class="control-group"><div class="label">Tq. Overflow</div><button id="valve-tk-overflow" class="valve">V</button></div>
+                <div class="control-group"><div class="label">Equalização Tqs. Serviço</div><button id="valve-serv-equal" class="valve">V</button></div>
+                <div class="control-group">
+                    <div class="label">Purificador</div>
+                    <div class="equipment-group">
+                        <button id="valve-pur-in" class="valve" title="Válvula de Entrada do Purificador">E</button>
+                        <button id="btn-purificador" class="equipment pump" title="Ligar/Desligar Purificador">P</button>
+                        <button id="valve-pur-out" class="valve" title="Válvula de Saída do Purificador">S</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="label">Bomba 1</div>
+                    <div class="equipment-group">
+                        <button id="valve-bomba1-in" class="valve" title="Válvula de Entrada da Bomba 1">E</button>
+                        <button id="btn-bomba1" class="pump" title="Ligar/Desligar Bomba 1">B1</button>
+                        <button id="valve-bomba1-out" class="valve" title="Válvula de Saída da Bomba 1">S</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="label">Bomba 2</div>
+                    <div class="equipment-group">
+                        <button id="valve-bomba2-in" class="valve" title="Válvula de Entrada da Bomba 2">E</button>
+                        <button id="btn-bomba2" class="pump" title="Ligar/Desligar Bomba 2">B2</button>
+                        <button id="valve-bomba2-out" class="valve" title="Válvula de Saída da Bomba 2">S</button>
+                    </div>
+                </div>
+                <div class="control-group"><div class="label">Usar Kit SOPEP</div><button id="btn-sopep" class="custom-button">SOPEP</button></div>
+            </div>
+        </div>
+
+        <!-- PAINEL DO CAMINHÃO TANQUE -->
+        <div class="panel panel-caminhao">
+            <h2>Caminhão Tanque</h2>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <button id="btn-inspect-truck" class="custom-button">1. Inspecionar</button>
+                <button id="btn-connect-hose" class="custom-button" disabled>2. Conectar Mangote</button>
+                <button id="btn-collect-sample" class="custom-button" disabled>3. Coletar Amostra</button>
+            </div>
+            <div id="caminhao-container"></div>
+        </div>
+    </div>
+
+    <!-- MODAIS -->
+    <div id="welcome-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Bem-vindo ao Simulador de Combustível!</h3>
+            <p>Este é um ambiente de treinamento para operações de abastecimento e transferência de combustível em um rebocador. Siga os procedimentos de segurança, opere as válvulas e bombas, e esteja preparado para emergências.</p>
+            <p>Seu objetivo é abastecer o rebocador a partir do caminhão-tanque e transferir o combustível para os tanques de serviço, seguindo todas as etapas corretamente.</p>
+            <div class="modal-buttons">
+                <button id="btn-close-welcome" class="modal-btn-confirm">Iniciar Treinamento</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="checklist-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Checklist de Segurança</h3>
+            <ul class="checklist">
+                <li><label><input type="checkbox" name="checklist-item"> Mangotes conectados.</label></li>
+                <li><label><input type="checkbox" name="checklist-item"> Extintores a postos.</label></li>
+                <li><label><input type="checkbox" name="checklist-item"> Kit SOPEP a postos.</label></li>
+                <li><label><input type="checkbox" name="checklist-item"> Drenos de chuva das bandejas (BB/BE) FECHADOS.</label></li>
+                <li><label><input type="checkbox" name="checklist-item"> Comunicação OK.</label></li>
+            </ul>
+            <p id="checklist-error" style="color: red; display: none;">Todos os itens devem ser verificados.</p>
+            <div class="modal-buttons">
+                <button id="btn-cancel-checklist" class="modal-btn-cancel">Cancelar</button>
+                <button id="btn-confirm-checklist" class="modal-btn-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="inspection-modal" class="modal-overlay">
+        <div class="modal">
+            <h3 id="inspection-title">Inspeção dos Tanques</h3>
+            <div id="inspection-content" class="modal-content-grid"></div>
+            <div class="modal-buttons">
+                <button id="btn-close-inspection" class="modal-btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="connection-side-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Selecionar Bordo de Conexão</h3>
+            <div class="modal-buttons" style="justify-content: center;">
+                <button class="custom-button" data-side="bb">Bombordo (BB)</button>
+                <button class="custom-button" data-side="be">Boreste (BE)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pump-inlet-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Selecionar Tanque de Sucção</h3>
+            <ul class="selection-list">
+                <li><label><input type="radio" name="pump-source" value="tk_central"> Tanque Central</label></li>
+                <li><label><input type="radio" name="pump-source" value="tk_dfbb"> Tanque Duplo Fundo BB</label></li>
+                <li><label><input type="radio" name="pump-source" value="tk_dfbe"> Tanque Duplo Fundo BE</label></li>
+                <li><label><input type="radio" name="pump-source" value="tk_overflow"> Tanque de Overflow</label></li>
+            </ul>
+            <div class="modal-buttons">
+                <button id="btn-cancel-inlet" class="modal-btn-cancel">Cancelar</button>
+                <button id="btn-confirm-inlet" class="modal-btn-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pump-outlet-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Selecionar Destino</h3>
+            <ul class="selection-list">
+                <li><label><input type="radio" name="pump-destination" value="servico"> Tanques de Serviço</label></li>
+                <li><label><input type="radio" name="pump-destination" value="externa"> Transferência Externa</label></li>
+            </ul>
+            <div class="modal-buttons">
+                <button id="btn-cancel-outlet" class="modal-btn-cancel">Cancelar</button>
+                <button id="btn-confirm-outlet" class="modal-btn-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="report-card-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Relatório de Desempenho da Operação</h3>
+            <table id="report-table">
+                <thead>
+                    <tr>
+                        <th>Item Avaliado</th>
+                        <th>Status</th>
+                        <th>Observações</th>
+                    </tr>
+                </thead>
+                <tbody id="report-body">
+                </tbody>
+            </table>
+            <div class="modal-buttons">
+                <button id="btn-close-report" class="modal-btn-confirm">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sopep-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Ação de Emergência - Kit SOPEP</h3>
+            <p id="sopep-status-text"></p>
+            <div id="sopep-materials" class="modal-buttons" style="justify-content: center;">
+                <button class="custom-button" data-absorb="50">Usar Manta</button>
+                <button class="custom-button" data-absorb="100">Usar Barreira</button>
+                <button class="custom-button" data-absorb="150">Usar Turfa</button>
+            </div>
+            <div id="sopep-outofcontrol" style="display: none; text-align: center;">
+                <h4 style="color: var(--alarm-bg);">FORA DE CONTROLE!</h4>
+                <p>O derramamento atingiu um nível crítico. A simulação será encerrada.</p>
+                <button id="btn-reset-from-sopep" class="custom-button modal-btn-cancel">Resetar Simulação</button>
+            </div>
+            <div class="modal-buttons">
+                <button id="btn-close-sopep" class="modal-btn-confirm">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const initialSystemState = {
+        tanks: {
+            central: { current: 0, capacity: 20000, name: "Tanque Central" },
+            df_bb:   { current: 0, capacity: 10000, name: "Tanque DF BB" },
+            df_be:   { current: 0, capacity: 10000, name: "Tanque DF BE" },
+            serv_bb: { current: 0,  capacity: 2000, name: "Tanque Serviço BB" },
+            serv_be: { current: 0,  capacity: 2000, name: "Tanque Serviço BE" },
+            overflow: { current: 0, capacity: 5000, name: "Tanque de Overflow"},
+            oleo_sujo: { current: 0, capacity: 2000, name: "Tanque Óleo Sujo"},
+            caminhao: [
+                { current: 5000, capacity: 5000, timer: 0 }, { current: 5000, capacity: 5000, timer: 0 },
+                { current: 5000, capacity: 5000, timer: 0 }, { current: 5000, capacity: 5000, timer: 0 },
+                { current: 5000, capacity: 5000, timer: 0 }, { current: 5000, capacity: 5000, timer: 0 },
+            ]
+        },
+        valves: {
+            rec_cais_bb: false, rec_cais_be: false,
+            tk_central: false, tk_dfbb: false, tk_dfbe: false, tk_overflow: false,
+            serv_equal: false,
+            pur_in: false, pur_out: false,
+            bomba1_in: false, bomba1_out: false,
+            bomba2_in: false, bomba2_out: false,
+            dreno_sujo_bb: false, dreno_chuva_bb: false,
+            dreno_sujo_be: false, dreno_chuva_be: false,
+            caminhao: [false, false, false, false, false, false],
+        },
+        pumps: {
+            purificador: false, bomba1: false, bomba2: false,
+        },
+        simulation: {
+            status: 'stopped', intervalId: null, tickRate: 100, flowRate: 50,
+            leakRate: 10, equalRate: 20, preInspectionComplete: false, 
+            hoseConnected: false, connectionSide: null, sampleCollected: false, abastecimentoAtivo: false, 
+            leakActive: false, leakHappened: false,
+            pump1_source: null, pump1_destination: null,
+            pump2_source: null, pump2_destination: null,
+        },
+        dripTray: { 
+            bb: { current: 0, capacity: 200, isWater: false },
+            be: { current: 0, capacity: 200, isWater: false }
+        },
+        deckSpill: { 
+            bb: { current: 0, limit: 100 },
+            be: { current: 0, limit: 100 }
+        },
+        alarms: {},
+        performanceReport: null
+    };
+
+    let systemState;
+
+    const domElements = {
+        tanks: {
+            central: document.getElementById('level-central'), df_bb: document.getElementById('level-df-bb'), df_be: document.getElementById('level-df-be'),
+            serv_bb: document.getElementById('level-serv-bb'), serv_be: document.getElementById('level-serv-be'), caminhao: [],
+            overflow: document.getElementById('level-overflow'), oleo_sujo: document.getElementById('level-oleo-sujo'),
+            drip_tray_bb: document.getElementById('level-drip-tray-bb'),
+            drip_tray_be: document.getElementById('level-drip-tray-be'),
+        },
+        volumes: {
+            central: document.getElementById('vol-central'), df_bb: document.getElementById('vol-df-bb'), df_be: document.getElementById('vol-df-be'),
+            serv_bb: document.getElementById('vol-serv-bb'), serv_be: document.getElementById('vol-serv-be'), caminhao: [],
+            overflow: document.getElementById('vol-overflow'), oleo_sujo: document.getElementById('vol-oleo-sujo'),
+        },
+        valves: {
+            rec_cais_bb: document.getElementById('valve-rec-cais-bb'), rec_cais_be: document.getElementById('valve-rec-cais-be'),
+            tk_central: document.getElementById('valve-tk-central'), tk_dfbb: document.getElementById('valve-tk-dfbb'), tk_dfbe: document.getElementById('valve-tk-dfbe'),
+            tk_overflow: document.getElementById('valve-tk-overflow'),
+            serv_equal: document.getElementById('valve-serv-equal'),
+            pur_in: document.getElementById('valve-pur-in'), pur_out: document.getElementById('valve-pur-out'),
+            bomba1_in: document.getElementById('valve-bomba1-in'), bomba1_out: document.getElementById('valve-bomba1-out'),
+            bomba2_in: document.getElementById('valve-bomba2-in'), bomba2_out: document.getElementById('valve-bomba2-out'),
+            dreno_sujo_bb: document.getElementById('valve-dreno-sujo-bb'), dreno_chuva_bb: document.getElementById('valve-dreno-chuva-bb'),
+            dreno_sujo_be: document.getElementById('valve-dreno-sujo-be'), dreno_chuva_be: document.getElementById('valve-dreno-chuva-be'),
+            caminhao: []
+        },
+        pumps: {
+            purificador: document.getElementById('btn-purificador'), bomba1: document.getElementById('btn-bomba1'), bomba2: document.getElementById('btn-bomba2'),
+        },
+        controls: {
+            simToggle: document.getElementById('btn-sim-toggle'), resetBtn: document.getElementById('btn-reset-sim'),
+            inspectTruckBtn: document.getElementById('btn-inspect-truck'),
+            connectHoseBtn: document.getElementById('btn-connect-hose'),
+            collectSampleBtn: document.getElementById('btn-collect-sample'),
+            sopepBtn: document.getElementById('btn-sopep'),
+        },
+        deckSpill: {
+            bb: document.getElementById('deck-spill-bb'),
+            be: document.getElementById('deck-spill-be'),
+        },
+        alarm: {
+            banner: document.getElementById('alarm-notification'), text: document.getElementById('alarm-text'),
+            ackBtn: document.getElementById('alarm-ack-btn'),
+        },
+        welcome: {
+            modal: document.getElementById('welcome-modal'),
+            closeBtn: document.getElementById('btn-close-welcome'),
+        },
+        checklist: {
+            modal: document.getElementById('checklist-modal'), confirmBtn: document.getElementById('btn-confirm-checklist'),
+            cancelBtn: document.getElementById('btn-cancel-checklist'), items: document.querySelectorAll('input[name="checklist-item"]'),
+            errorMsg: document.getElementById('checklist-error')
+        },
+        inspection: {
+            modal: document.getElementById('inspection-modal'), title: document.getElementById('inspection-title'),
+            content: document.getElementById('inspection-content'), closeBtn: document.getElementById('btn-close-inspection'),
+        },
+        connectionSide: {
+            modal: document.getElementById('connection-side-modal'),
+            buttons: document.querySelectorAll('#connection-side-modal button'),
+        },
+        pumpInlet: {
+            modal: document.getElementById('pump-inlet-modal'), confirmBtn: document.getElementById('btn-confirm-inlet'),
+            cancelBtn: document.getElementById('btn-cancel-inlet'), options: document.querySelectorAll('input[name="pump-source"]')
+        },
+        pumpOutlet: {
+            modal: document.getElementById('pump-outlet-modal'), confirmBtn: document.getElementById('btn-confirm-outlet'),
+            cancelBtn: document.getElementById('btn-cancel-outlet'), options: document.querySelectorAll('input[name="pump-destination"]')
+        },
+        reportCard: {
+            modal: document.getElementById('report-card-modal'),
+            body: document.getElementById('report-body'),
+            closeBtn: document.getElementById('btn-close-report'),
+        },
+        sopep: {
+            modal: document.getElementById('sopep-modal'),
+            statusText: document.getElementById('sopep-status-text'),
+            materials: document.getElementById('sopep-materials'),
+            outOfControl: document.getElementById('sopep-outofcontrol'),
+            resetBtn: document.getElementById('btn-reset-from-sopep'),
+            closeBtn: document.getElementById('btn-close-sopep'),
+        }
+    };
+
+    let activePumpSelection = { pump: null, type: null };
+
+    function createCaminhaoTanks() {
+        const container = document.getElementById('caminhao-container');
+        container.innerHTML = ''; // Limpa o container antes de adicionar
+        if (!systemState || !systemState.tanks) return;
+        systemState.tanks.caminhao.forEach((tank, index) => {
+            const tankDiv = document.createElement('div');
+            tankDiv.className = 'caminhao-component';
+            tankDiv.innerHTML = `
+                <div class="label">Caminhão Tq ${index + 1}</div>
+                <div id="timer-caminhao-${index}" class="timer-display">00:00</div>
+                <div class="tank truck">
+                    <div id="level-caminhao-${index}" class="fuel-level"></div>
+                    <span id="vol-caminhao-${index}" class="volume-display"></span>
+                </div>
+                <button id="valve-caminhao-${index}" class="valve">V</button>`;
+            container.appendChild(tankDiv);
+            domElements.tanks.caminhao[index] = document.getElementById(`level-caminhao-${index}`);
+            domElements.volumes.caminhao[index] = document.getElementById(`vol-caminhao-${index}`);
+            domElements.valves.caminhao[index] = document.getElementById(`valve-caminhao-${index}`);
+        });
+    }
+
+    function updateUI() {
+        Object.keys(domElements.tanks).forEach(key => {
+            if (key !== 'caminhao' && !key.startsWith('drip_tray') && domElements.tanks[key]) {
+                const tank = systemState.tanks[key];
+                const percentage = (tank.capacity > 0) ? (tank.current / tank.capacity) * 100 : 0;
+                domElements.tanks[key].style.height = `${percentage}%`;
+                domElements.volumes[key].textContent = `${Math.round(tank.current)} L`;
+            }
+        });
+        systemState.tanks.caminhao.forEach((tank, index) => {
+            if (domElements.tanks.caminhao[index]) {
+                const percentage = (tank.capacity > 0) ? (tank.current / tank.capacity) * 100 : 0;
+                domElements.tanks.caminhao[index].style.height = `${percentage}%`;
+                domElements.volumes.caminhao[index].textContent = `${Math.round(tank.current)} L`;
+                
+                const timerEl = document.getElementById(`timer-caminhao-${index}`);
+                if (timerEl) {
+                    const minutes = Math.floor(tank.timer / 60);
+                    const seconds = tank.timer % 60;
+                    timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+            }
+        });
+        
+        domElements.tanks.drip_tray_bb.style.height = `${(systemState.dripTray.bb.current / systemState.dripTray.bb.capacity) * 100}%`;
+        domElements.tanks.drip_tray_bb.classList.toggle('water', systemState.dripTray.bb.isWater);
+        domElements.tanks.drip_tray_be.style.height = `${(systemState.dripTray.be.current / systemState.dripTray.be.capacity) * 100}%`;
+        domElements.tanks.drip_tray_be.classList.toggle('water', systemState.dripTray.be.isWater);
+
+        domElements.deckSpill.bb.style.opacity = systemState.deckSpill.bb.current > 0 ? '1' : '0';
+        domElements.deckSpill.be.style.opacity = systemState.deckSpill.be.current > 0 ? '1' : '0';
+
+        Object.keys(domElements.valves).forEach(key => {
+            if (key !== 'caminhao') domElements.valves[key].classList.toggle('open', systemState.valves[key]);
+        });
+        systemState.valves.caminhao.forEach((state, index) => {
+            if(domElements.valves.caminhao[index]) {
+                domElements.valves.caminhao[index].classList.toggle('open', state);
+            }
+        });
+
+        Object.keys(domElements.pumps).forEach(key => {
+            domElements.pumps[key].classList.toggle('on', systemState.pumps[key]);
+        });
+    }
+
+    function showInspectionModal(isPostInspection) {
+        const title = isPostInspection ? "Inspeção Pós-Abastecimento" : "Inspeção Pré-Abastecimento";
+        domElements.inspection.title.textContent = title;
+        let contentHTML = '';
+        systemState.tanks.caminhao.forEach((tank, index) => {
+            contentHTML += `<div><strong>Tanque ${index + 1}:</strong> ${Math.round(tank.current)} L</div>`;
+        });
+        domElements.inspection.content.innerHTML = contentHTML;
+        domElements.inspection.modal.classList.add('visible');
+    }
+
+    function handlePumpValveClick(pump, type) {
+        const valveKey = `${pump}_${type}`;
+        if (systemState.valves[valveKey]) {
+            systemState.valves[valveKey] = false;
+            if (type === 'in') systemState.simulation[`${pump}_source`] = null;
+            if (type === 'out') systemState.simulation[`${pump}_destination`] = null;
+            updateUI();
+        } else {
+            activePumpSelection = { pump, type };
+            if (type === 'in') {
+                domElements.pumpInlet.options.forEach(opt => opt.checked = false);
+                domElements.pumpInlet.modal.classList.add('visible');
+            }
+            if (type === 'out') {
+                domElements.pumpOutlet.options.forEach(opt => opt.checked = false);
+                domElements.pumpOutlet.modal.classList.add('visible');
+            }
+        }
+    }
+
+    function setupEventListeners() {
+        domElements.controls.inspectTruckBtn.addEventListener('click', () => {
+            showInspectionModal(false);
+            systemState.simulation.preInspectionComplete = true;
+            systemState.performanceReport.inspectionDone = true;
+            domElements.controls.connectHoseBtn.disabled = false;
+        });
+
+        domElements.controls.connectHoseBtn.addEventListener('click', () => {
+            if (!systemState.simulation.preInspectionComplete) {
+                alert("ERRO: Inspecione os tanques primeiro.");
+                return;
+            }
+            domElements.connectionSide.modal.classList.add('visible');
+        });
+
+        domElements.connectionSide.buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                systemState.simulation.hoseConnected = true;
+                systemState.simulation.connectionSide = btn.dataset.side;
+                domElements.controls.connectHoseBtn.textContent = `Mangote Conectado (${btn.dataset.side.toUpperCase()})`;
+                domElements.controls.connectHoseBtn.disabled = true;
+                domElements.controls.collectSampleBtn.disabled = false;
+                domElements.connectionSide.modal.classList.remove('visible');
+            });
+        });
+        
+        domElements.controls.collectSampleBtn.addEventListener('click', () => {
+            if (!systemState.simulation.hoseConnected) {
+                alert("ERRO: Conecte o mangote primeiro.");
+                return;
+            }
+            systemState.simulation.sampleCollected = true;
+            systemState.performanceReport.sampleCollected = true;
+            domElements.controls.collectSampleBtn.textContent = "Amostra Coletada";
+            domElements.controls.collectSampleBtn.disabled = true;
+        });
+
+        const recCaisHandler = (side) => {
+            const valveKey = `rec_cais_${side}`;
+            if (systemState.valves[valveKey]) {
+                systemState.valves[valveKey] = false;
+                if(systemState.simulation.abastecimentoAtivo) {
+                    showInspectionModal(true);
+                    if (systemState.tanks.caminhao.every(t => t.current === 0)) {
+                        generateAndShowReport();
+                    }
+                }
+                resetAbastecimento();
+                updateUI();
+            } else {
+                if (systemState.simulation.connectionSide !== side) {
+                    alert(`ERRO: Mangote não está conectado a este bordo (${side.toUpperCase()}).`);
+                    return;
+                }
+                if (!systemState.simulation.preInspectionComplete) {
+                    alert("ERRO: Realize a inspeção dos tanques do caminhão primeiro.");
+                } else if (!systemState.simulation.hoseConnected) {
+                    alert("ERRO: Conecte o mangote antes de continuar.");
+                } else if (!systemState.simulation.sampleCollected) {
+                    alert("ERRO: Colete a amostra de óleo antes de continuar.");
+                } else {
+                    domElements.checklist.modal.classList.add('visible');
+                }
+            }
+        };
+
+        domElements.valves.rec_cais_bb.addEventListener('click', () => recCaisHandler('bb'));
+        domElements.valves.rec_cais_be.addEventListener('click', () => recCaisHandler('be'));
+
+        Object.keys(domElements.valves).forEach(key => {
+            if (!['caminhao', 'rec_cais_bb', 'rec_cais_be', 'bomba1_in', 'bomba1_out', 'bomba2_in', 'bomba2_out'].includes(key) && domElements.valves[key]) {
+                domElements.valves[key].addEventListener('click', () => {
+                    systemState.valves[key] = !systemState.valves[key];
+                    updateUI();
+                });
+            }
+        });
+
+        domElements.valves.bomba1_in.addEventListener('click', () => handlePumpValveClick('bomba1', 'in'));
+        domElements.valves.bomba1_out.addEventListener('click', () => handlePumpValveClick('bomba1', 'out'));
+        domElements.valves.bomba2_in.addEventListener('click', () => handlePumpValveClick('bomba2', 'in'));
+        domElements.valves.bomba2_out.addEventListener('click', () => handlePumpValveClick('bomba2', 'out'));
+
+        domElements.valves.caminhao.forEach((valveEl, index) => {
+            valveEl.addEventListener('click', () => {
+                const isAnyRebocadorTankOpen = systemState.valves.tk_central || systemState.valves.tk_dfbb || systemState.valves.tk_dfbe;
+                if (!systemState.valves.rec_cais_bb && !systemState.valves.rec_cais_be) {
+                    alert("ERRO: Siga a sequência. Abra a válvula 'Receb. CAIS' e complete o checklist primeiro.");
+                    return;
+                }
+                if (!isAnyRebocadorTankOpen) {
+                    alert("ERRO: Siga a sequência. Abra a válvula do tanque de destino no rebocador primeiro.");
+                    return;
+                }
+                const currentState = systemState.valves.caminhao[index];
+                systemState.valves.caminhao.fill(false);
+                systemState.valves.caminhao[index] = !currentState;
+                updateUI();
+            });
+        });
+
+        Object.keys(domElements.pumps).forEach(key => {
+            domElements.pumps[key].addEventListener('click', () => {
+                systemState.pumps[key] = !systemState.pumps[key];
+                updateUI();
+            });
+        });
+        
+        domElements.controls.simToggle.addEventListener('click', toggleSimulation);
+        domElements.controls.resetBtn.addEventListener('click', resetSimulation);
+        
+        domElements.controls.sopepBtn.addEventListener('click', () => {
+            domElements.sopep.modal.classList.add('visible');
+            updateSopepModal();
+        });
+        domElements.alarm.ackBtn.addEventListener('click', () => domElements.alarm.banner.style.display = 'none');
+
+        domElements.welcome.closeBtn.addEventListener('click', () => domElements.welcome.modal.classList.remove('visible'));
+        
+        domElements.checklist.confirmBtn.addEventListener('click', () => {
+            const allChecked = Array.from(domElements.checklist.items).every(item => item.checked);
+            if (allChecked) {
+                const side = systemState.simulation.connectionSide;
+                systemState.valves[`rec_cais_${side}`] = true;
+                systemState.simulation.abastecimentoAtivo = true;
+                systemState.performanceReport.rainDrainClosed = true; // Assume correct action from checklist
+                domElements.checklist.modal.classList.remove('visible');
+                updateUI();
+            } else {
+                domElements.checklist.errorMsg.style.display = 'block';
+            }
+        });
+        domElements.checklist.cancelBtn.addEventListener('click', () => domElements.checklist.modal.classList.remove('visible'));
+
+        domElements.inspection.closeBtn.addEventListener('click', () => domElements.inspection.modal.classList.remove('visible'));
+        domElements.reportCard.closeBtn.addEventListener('click', () => domElements.reportCard.modal.classList.remove('visible'));
+
+        domElements.pumpInlet.confirmBtn.addEventListener('click', () => {
+            const selected = document.querySelector('input[name="pump-source"]:checked');
+            if (selected) {
+                const { pump } = activePumpSelection;
+                systemState.simulation[`${pump}_source`] = selected.value;
+                systemState.valves[`${pump}_in`] = true;
+                domElements.pumpInlet.modal.classList.remove('visible');
+                updateUI();
+            }
+        });
+        domElements.pumpInlet.cancelBtn.addEventListener('click', () => domElements.pumpInlet.modal.classList.remove('visible'));
+
+        domElements.pumpOutlet.confirmBtn.addEventListener('click', () => {
+            const selected = document.querySelector('input[name="pump-destination"]:checked');
+            if (selected) {
+                const { pump } = activePumpSelection;
+                systemState.simulation[`${pump}_destination`] = selected.value;
+                systemState.valves[`${pump}_out`] = true;
+                domElements.pumpOutlet.modal.classList.remove('visible');
+                updateUI();
+            }
+        });
+        domElements.pumpOutlet.cancelBtn.addEventListener('click', () => domElements.pumpOutlet.modal.classList.remove('visible'));
+        
+        domElements.sopep.closeBtn.addEventListener('click', () => domElements.sopep.modal.classList.remove('visible'));
+        domElements.sopep.resetBtn.addEventListener('click', () => {
+            domElements.sopep.modal.classList.remove('visible');
+            resetSimulation();
+        });
+        domElements.sopep.materials.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const absorbAmount = parseInt(btn.dataset.absorb, 10);
+                systemState.deckSpill.bb.current = Math.max(0, systemState.deckSpill.bb.current - absorbAmount);
+                systemState.deckSpill.be.current = Math.max(0, systemState.deckSpill.be.current - absorbAmount);
+                systemState.dripTray.bb.current = Math.max(0, systemState.dripTray.bb.current - absorbAmount);
+                systemState.dripTray.be.current = Math.max(0, systemState.dripTray.be.current - absorbAmount);
+                systemState.performanceReport.sopepUsed = true;
+                updateSopepModal();
+                updateUI();
+            });
+        });
+    }
+    
+    function transferWithOverflow(source, destination, amount, allowOverflowTank = true) {
+        const spaceAvailable = destination.capacity - destination.current;
+        const amountToTransfer = Math.min(amount, source.current, spaceAvailable);
+        
+        if (amountToTransfer > 0) {
+            destination.current += amountToTransfer;
+            source.current -= amountToTransfer;
+        }
+
+        const overflowAmount = Math.max(0, Math.min(amount, source.current) - amountToTransfer);
+        if (overflowAmount > 0 && allowOverflowTank) {
+            systemState.performanceReport.tanksOverfilled++;
+            const overflowTank = systemState.tanks.overflow;
+            const spaceInOverflow = overflowTank.capacity - overflowTank.current;
+            const amountToOverflow = Math.min(overflowAmount, source.current, spaceInOverflow);
+            if (amountToOverflow > 0) {
+                overflowTank.current += amountToOverflow;
+                source.current -= amountToOverflow;
+            }
+        }
+    }
+
+    function checkAlarms() {
+        let activeAlarm = false;
+        for (const key in systemState.tanks) {
+            if (key === 'caminhao') continue;
+            const tank = systemState.tanks[key];
+            const threshold = key === 'overflow' ? 0.5 : 0.9;
+            const level = tank.capacity > 0 ? tank.current / tank.capacity : 0;
+            if (level >= threshold && !systemState.alarms[key]) {
+                systemState.alarms[key] = true;
+                if (key === 'overflow') systemState.performanceReport.overflowAlarms++;
+                else systemState.performanceReport.highLevelAlarms++;
+                domElements.alarm.text.textContent = `ALERTA: Nível alto em ${tank.name}!`;
+                domElements.alarm.banner.style.display = 'flex';
+                activeAlarm = true;
+            } else if (level < threshold && systemState.alarms[key]) {
+                systemState.alarms[key] = false;
+            }
+        }
+        if (!activeAlarm && !Object.values(systemState.alarms).some(a => a)) {
+             if (domElements.alarm.banner.style.display !== 'none') {
+                let anyAlarmStillActive = false;
+                for (const key in systemState.alarms) {
+                    if(systemState.alarms[key]) anyAlarmStillActive = true;
+                }
+                if (!anyAlarmStillActive) domElements.alarm.banner.style.display = 'none';
+             }
+        }
+    }
+
+    function simulationTick() {
+        const flow = systemState.simulation.flowRate;
+        
+        const openCaminhaoValveIndex = systemState.valves.caminhao.findIndex(v => v);
+        if (systemState.valves[`rec_cais_${systemState.simulation.connectionSide}`] && systemState.simulation.abastecimentoAtivo && openCaminhaoValveIndex !== -1) {
+            const source = systemState.tanks.caminhao[openCaminhaoValveIndex];
+            let flowToTanks = flow;
+            
+            source.timer += 6;
+
+            if (!systemState.simulation.leakHappened && Math.random() < 0.01) {
+                systemState.simulation.leakActive = true;
+                systemState.simulation.leakHappened = true;
+                systemState.performanceReport.leakTimestamp = Date.now();
+                alert("ALERTA DE VAZAMENTO NA CONEXÃO!");
+            }
+
+            if (systemState.simulation.leakActive) {
+                const leakAmount = Math.min(source.current, systemState.simulation.leakRate);
+                const activeTray = systemState.dripTray[systemState.simulation.connectionSide];
+                activeTray.isWater = false;
+                transferWithOverflow({current: leakAmount, capacity: leakAmount}, activeTray, leakAmount, false);
+                flowToTanks -= leakAmount;
+            }
+
+            if (systemState.valves.tk_central) transferWithOverflow(source, systemState.tanks.central, flowToTanks, true);
+            if (systemState.valves.tk_dfbb) transferWithOverflow(source, systemState.tanks.df_bb, flowToTanks, true);
+            if (systemState.valves.tk_dfbe) transferWithOverflow(source, systemState.tanks.df_be, flowToTanks, true);
+        } else {
+             if (systemState.simulation.leakActive && !systemState.performanceReport.leakStoppedTimestamp) {
+                systemState.performanceReport.leakStoppedTimestamp = Date.now();
+            }
+        }
+
+        ['bb', 'be'].forEach(side => {
+            if (Math.random() < 0.03 && !systemState.valves[`rec_cais_${side}`]) {
+                const rainAmount = 5;
+                const tray = systemState.dripTray[side];
+                if (!systemState.simulation.leakActive && tray.current < tray.capacity) {
+                    tray.isWater = true;
+                    tray.current = Math.min(tray.capacity, tray.current + rainAmount);
+                }
+            }
+
+            const tray = systemState.dripTray[side];
+            if (tray.current > tray.capacity) {
+                const overflow = tray.current - tray.capacity;
+                systemState.deckSpill[side].current += overflow;
+                systemState.performanceReport.spillOccurred = true;
+                tray.current = tray.capacity;
+            }
+            
+            if (systemState.valves[`dreno_sujo_${side}`]) {
+                transferWithOverflow(tray, systemState.tanks.oleo_sujo, 20, false);
+            }
+            if (systemState.valves[`dreno_chuva_${side}`]) {
+                if (tray.current > 0 && !tray.isWater) {
+                    alert(`ALERTA: Não drene óleo para o convés! (Bandeja ${side.toUpperCase()})`);
+                    systemState.performanceReport.drainedOilToDeck = true;
+                }
+                tray.current = 0;
+                tray.isWater = false;
+            }
+        });
+
+        const suctionSources = [];
+        if (systemState.valves.tk_central) suctionSources.push(systemState.tanks.central);
+        if (systemState.valves.tk_dfbb) suctionSources.push(systemState.tanks.df_bb);
+        if (systemState.valves.tk_dfbe) suctionSources.push(systemState.tanks.df_be);
+        if (systemState.valves.tk_overflow) suctionSources.push(systemState.tanks.overflow);
+
+        if (suctionSources.length > 0) {
+            const flowPerSource = flow / suctionSources.length;
+            if (systemState.pumps.purificador && systemState.valves.pur_in && systemState.valves.pur_out) {
+                suctionSources.forEach(source => {
+                    transferWithOverflow(source, systemState.tanks.serv_bb, flowPerSource / 2);
+                    transferWithOverflow(source, systemState.tanks.serv_be, flowPerSource / 2);
+                });
+            }
+        }
+        
+        const processPump = (pumpId) => {
+            const pumpOn = systemState.pumps[pumpId];
+            const valveIn = systemState.valves[`${pumpId}_in`];
+            const valveOut = systemState.valves[`${pumpId}_out`];
+            const sourceKey = systemState.simulation[`${pumpId}_source`];
+            const destination = systemState.simulation[`${pumpId}_destination`];
+
+            if (pumpOn && valveIn && valveOut && sourceKey && destination) {
+                const sourceTank = systemState.tanks[sourceKey.replace('tk_', '')];
+                if (destination === 'servico') {
+                    transferWithOverflow(sourceTank, systemState.tanks.serv_bb, flow / 2);
+                    transferWithOverflow(sourceTank, systemState.tanks.serv_be, flow / 2);
+                }
+            }
+        };
+
+        processPump('bomba1');
+        processPump('bomba2');
+
+        if (systemState.valves.serv_equal) {
+            const tq_bb = systemState.tanks.serv_bb;
+            const tq_be = systemState.tanks.serv_be;
+            const diff = tq_bb.current - tq_be.current;
+            const eqRate = systemState.simulation.equalRate;
+            if (Math.abs(diff) > eqRate) {
+                if (diff > 0) transferWithOverflow(tq_bb, tq_be, eqRate);
+                else transferWithOverflow(tq_be, tq_bb, eqRate);
+            }
+        }
+
+        updateUI();
+        checkAlarms();
+    }
+
+    function resetAbastecimento() {
+        systemState.simulation.preInspectionComplete = false;
+        systemState.simulation.hoseConnected = false;
+        systemState.simulation.sampleCollected = false;
+        systemState.simulation.connectionSide = null;
+        domElements.controls.inspectTruckBtn.disabled = false;
+        domElements.controls.connectHoseBtn.textContent = "2. Conectar Mangote";
+        domElements.controls.connectHoseBtn.disabled = true;
+        domElements.controls.collectSampleBtn.textContent = "3. Coletar Amostra";
+        domElements.controls.collectSampleBtn.disabled = true;
+        systemState.simulation.abastecimentoAtivo = false;
+        systemState.simulation.leakActive = false;
+        domElements.checklist.items.forEach(item => item.checked = false);
+    }
+    
+    function generateAndShowReport() {
+        const report = systemState.performanceReport;
+        let html = '';
+        
+        const addRow = (item, status, obs) => {
+            html += `<tr><td>${item}</td><td class="status-${status.toLowerCase()}">${status}</td><td>${obs}</td></tr>`;
+        };
+
+        addRow("Inspeção de Tanques", report.inspectionDone ? "OK" : "FALHA", "Procedimento inicial executado.");
+        addRow("Coleta de Amostra", report.sampleCollected ? "OK" : "FALHA", "Procedimento inicial executado.");
+        addRow("Dreno de Chuva Fechado", report.rainDrainClosed ? "OK" : "FALHA", "Verificado no checklist.");
+        
+        if (report.leakTimestamp) {
+            const reactionTime = report.leakStoppedTimestamp ? ((report.leakStoppedTimestamp - report.leakTimestamp) / 1000).toFixed(1) + 's' : 'N/A';
+            addRow("Vazamento", "ATENÇÃO", `Tempo de reação: ${reactionTime}`);
+        } else {
+            addRow("Vazamento", "OK", "Nenhum vazamento ocorreu.");
+        }
+
+        addRow("Derramamento no Convés", report.spillOccurred ? "FALHA" : "OK", report.spillOccurred ? "Bandeja transbordou." : "Sem derramamento.");
+        addRow("Uso do Kit SOPEP", report.spillOccurred ? (report.sopepUsed ? "OK" : "FALHA") : "N/A", report.spillOccurred ? (report.sopepUsed ? "Ação de contenção realizada." : "Ação de contenção NÃO realizada.") : "-");
+        addRow("Alarmes de Nível Alto (90%)", "ATENÇÃO", `${report.highLevelAlarms} alarme(s) ativado(s).`);
+        addRow("Alarmes de Overflow (50%)", "ATENÇÃO", `${report.overflowAlarms} alarme(s) ativado(s).`);
+        addRow("Transbordo para Tq. Overflow", "ATENÇÃO", `${report.tanksOverfilled} vez(es).`);
+
+        domElements.reportCard.body.innerHTML = html;
+        domElements.reportCard.modal.classList.add('visible');
+    }
+
+    function resetSimulation() {
+        if (systemState && systemState.simulation && systemState.simulation.intervalId) {
+            clearInterval(systemState.simulation.intervalId);
+        }
+        systemState = JSON.parse(JSON.stringify(initialSystemState));
+        systemState.performanceReport = {
+            inspectionDone: false, sampleCollected: false, rainDrainClosed: false,
+            leakTimestamp: null, leakStoppedTimestamp: null,
+            spillOccurred: false, sopepUsed: false,
+            highLevelAlarms: 0, overflowAlarms: 0, tanksOverfilled: 0,
+            drainedOilToDeck: false
+        };
+        
+        domElements.controls.simToggle.textContent = "Iniciar";
+        domElements.controls.simToggle.classList.remove('running');
+        domElements.alarm.banner.style.display = 'none';
+        
+        resetAbastecimento();
+        updateUI();
+    }
+
+    function toggleSimulation() {
+        const status = systemState.simulation.status;
+        if (status === 'stopped') {
+            systemState.simulation.status = 'running';
+            systemState.simulation.intervalId = setInterval(simulationTick, systemState.simulation.tickRate);
+            domElements.controls.simToggle.textContent = "Pausar";
+            domElements.controls.simToggle.classList.add('running');
+        } else if (status === 'running') {
+            systemState.simulation.status = 'paused';
+            clearInterval(systemState.simulation.intervalId);
+            systemState.simulation.intervalId = null;
+            domElements.controls.simToggle.textContent = "Continuar";
+            domElements.controls.simToggle.classList.remove('running');
+        } else if (status === 'paused') {
+            systemState.simulation.status = 'running';
+            systemState.simulation.intervalId = setInterval(simulationTick, systemState.simulation.tickRate);
+            domElements.controls.simToggle.textContent = "Pausar";
+            domElements.controls.simToggle.classList.add('running');
+        }
+    }
+    
+    function updateSopepModal() {
+        const spillBB = systemState.deckSpill.bb.current;
+        const spillBE = systemState.deckSpill.be.current;
+        const totalSpill = spillBB + spillBE;
+        const dripBB = systemState.dripTray.bb.current;
+        const dripBE = systemState.dripTray.be.current;
+        const totalDrip = dripBB + dripBE;
+
+        if (totalSpill > systemState.deckSpill.bb.limit) {
+            domElements.sopep.statusText.textContent = "DERRAMAMENTO CRÍTICO!";
+            domElements.sopep.materials.style.display = 'none';
+            domElements.sopep.outOfControl.style.display = 'block';
+        } else if (totalSpill > 0) {
+            domElements.sopep.statusText.textContent = `Derramamento de ${Math.round(totalSpill)}L no convés! Use os materiais para conter.`;
+            domElements.sopep.materials.style.display = 'flex';
+            domElements.sopep.outOfControl.style.display = 'none';
+        } else if (totalDrip > 0 && (!systemState.dripTray.bb.isWater || !systemState.dripTray.be.isWater)) {
+            domElements.sopep.statusText.textContent = `Vazamento de ${Math.round(totalDrip)}L contido na(s) bandeja(s).`;
+            domElements.sopep.materials.style.display = 'flex';
+            domElements.sopep.outOfControl.style.display = 'none';
+        } else {
+            domElements.sopep.statusText.textContent = "Nenhuma emergência de derramamento no momento.";
+            domElements.sopep.materials.style.display = 'none';
+            domElements.sopep.outOfControl.style.display = 'none';
+        }
+    }
+
+    // Inicialização
+    resetSimulation();
+    createCaminhaoTanks();
+    setupEventListeners();
+    updateUI();
+    domElements.welcome.modal.classList.add('visible');
+});
+</script>
+
+</body>
+</html>

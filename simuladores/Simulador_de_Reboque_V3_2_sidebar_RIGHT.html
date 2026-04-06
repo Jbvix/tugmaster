@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Simulador de Rebocador Azimutal — V2.7 (Manobras Detalhadas)</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: 'Roboto', sans-serif; background-color: #111827; overflow: hidden; }
+  canvas { display: block; background-color: #1f2937; border-radius: .5rem; border: 1px solid #4b5563; }
+  .card { background-color: #374151; border: 1px solid #4b5563; border-radius: .5rem; padding: 1rem; overflow: hidden; }
+  .value-pill { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; color: #67e8f9; background-color: #1e293b; padding: 2px 6px; border-radius: 9999px; font-size: 0.8em; }
+  .btn { transition: all .2s ease-in-out; border-width: 2px; border-radius: .5rem; font-weight: 500; }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.25); }
+  .btn:disabled { background-color: #4b5563; border-color: #374151; color: #9ca3af; cursor: not-allowed; }
+  .btn-blue { background-color: #3b82f6; border-color: #1d4ed8; color: #fff; }
+  .btn-green { background-color: #22c55e; border-color: #15803d; color: #fff; }
+  .btn-orange { background-color: #f97316; border-color: #c2410c; color: #fff; }
+  .btn-red { background-color: #ef4444; border-color: #b91c1c; color: #fff; }
+  input[type="range"] { width: 100%; accent-color: #22d3ee; cursor: pointer; }
+  #hud { position: absolute; top: .5rem; left: .5rem; color: #9CA3AF; background: rgba(0,0,0,.35); padding: .35rem .5rem; border-radius: .4rem; font-size: .8rem; z-index: 10; backdrop-filter: blur(2px); pointer-events: none; }
+  kbd { background-color: #4b5563; border-radius: 3px; padding: 2px 4px; font-size: 0.9em; }
+  
+  /* Styles for draggable panels */
+  .draggable-panel { position: absolute; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+  .drag-handle { cursor: move; user-select: none; padding: 4px; margin: -4px; border-radius: .25rem; transition: background-color 0.2s; }
+  .drag-handle:hover { background-color: rgba(255, 255, 255, 0.08); }
+
+  /* Styles for resize handle */
+  .resize-handle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    right: 0;
+    bottom: 0;
+    cursor: se-resize;
+    z-index: 2;
+  }
+  .resize-handle::after {
+    content: '';
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #9ca3af;
+    border-bottom: 2px solid #9ca3af;
+    opacity: 0.7;
+  }
+</style>
+
+<style>
+  .panel-sidebar{position:fixed; right:12px; top:50%; transform:translateY(-50%);
+    background:rgba(0,0,0,0.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px; z-index:2000;
+    max-height:80vh; overflow:auto; min-width: 200px;}
+  .panel-sidebar h3{margin:0 0 8px; font-weight:600; font-size:13px; color:#fff; text-align:center;}
+  .panel-sidebar .sidebar-btn{display:block; width:100%; margin:6px 0; padding:8px 10px;
+    border-radius:8px; border:1px solid rgba(255,255,255,0.12); background:#111; color:#ddd;
+    cursor:pointer; text-align:left; font-size:13px;}
+  .panel-sidebar .sidebar-btn:hover{background:#1a1a1a;}
+  .panel-hidden{display:none !important;}
+  .panel-close{position:absolute; top:6px; right:8px; cursor:pointer; font-size:14px; color:#ccc;
+    background:transparent; border:none;}
+  @media (max-width: 900px){
+    .panel-sidebar{right:8px; min-width: 160px;}
+  }
+</style>
+<footer style="text-align:center; margin-top:20px; font-size:14px; color:#666;">
+  © 2025 - Direitos Autorais Reservados<br>
+  Desenvolvido por <strong>Jossian Costa de Brito</strong>
+</footer>
+
+
+</head>
+<body class="min-h-screen p-4 text-gray-200">
+  <!-- Main layout container -->
+  <div class="relative h-full">
+
+    <!-- Simulation Canvas Panel -->
+    <div class="card draggable-panel" style="width: 800px; height: 800px; top: 1rem; left: 1rem; padding: 1rem; display: flex; flex-direction: column;">
+      <h2 class="text-lg font-semibold mb-2 text-center drag-handle">Simulador</h2>
+      <div class="relative flex-grow">
+        <div id="hud">HUD</div>
+		<!-- Registro Autoral — inserir dentro do container .relative do painel "Simulador" -->
+<div id="author-badge"
+     class="absolute bottom-2 right-2 pointer-events-none select-none
+            text-[11px] leading-none text-gray-300 bg-black/40
+            px-2 py-1 rounded-md border border-white/10 backdrop-blur-sm shadow">
+  © <span id="author-year"></span> Jossian Costa de Brito
+</div>
+
+<script>
+  // Preenche o ano automaticamente
+  (function () {
+    var el = document.getElementById('author-year');
+    if (el) el.textContent = new Date().getFullYear();
+  })();
+</script>
+        <canvas id="simCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- Draggable & Resizable Panels -->
+    
+    <!-- Main Control Panel -->
+    <div class="card draggable-panel" style="width: 360px; top: 1rem; left: calc(100% - 820px);">
+      <h1 class="text-2xl font-bold mb-4 text-center text-white drag-handle">Painel de Controle</h1>
+      <div class="text-center mb-4 p-3 bg-black/30 rounded-lg">
+        <h2 class="text-lg font-semibold text-gray-300">Velocidade</h2>
+        <p class="text-3xl font-mono text-cyan-400"><span id="speed-display">0.0</span> nós</p>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+    
+    <!-- Starboard Thruster -->
+    <div class="card draggable-panel" style="width: 360px; top: 11.5rem; left: calc(100% - 820px);">
+      <h2 class="text-lg font-semibold mb-2 text-center drag-handle">Propulsor Boreste</h2>
+      <div class="mb-3">
+        <label for="p1_angle" class="block text-sm mb-1">Ângulo do Jato: <span id="p1_angle_val" class="value-pill">0°</span></label>
+        <input type="range" id="p1_angle" min="-180" max="180" value="0">
+      </div>
+      <div>
+        <label for="p1_power" class="block text-sm mb-1">Potência: <span id="p1_power_val" class="value-pill">0%</span></label>
+        <input type="range" id="p1_power" min="0" max="100" value="0">
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- Port Thruster -->
+    <div class="card draggable-panel" style="width: 360px; top: 21rem; left: calc(100% - 820px);">
+      <h2 class="text-lg font-semibold mb-2 text-center drag-handle">Propulsor Bombordo</h2>
+      <div class="mb-3">
+        <label for="p2_angle" class="block text-sm mb-1">Ângulo do Jato: <span id="p2_angle_val" class="value-pill">0°</span></label>
+        <input type="range" id="p2_angle" min="-180" max="180" value="0">
+      </div>
+      <div>
+        <label for="p2_power" class="block text-sm mb-1">Potência: <span id="p2_power_val" class="value-pill">0%</span></label>
+        <input type="range" id="p2_power" min="0" max="100" value="0">
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- Maneuvers -->
+    <div class="card draggable-panel" style="width: 360px; top: 30.5rem; left: calc(100% - 820px);">
+        <h2 class="text-lg font-semibold mb-2 text-center drag-handle">Manobras</h2>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <button class="btn btn-red py-2" id="btn_stop" title="Leva ambos os pods para 90°/-90° em potência de idle. Zera movimento.">Parada Normal</button>
+            <button class="btn btn-orange py-2" id="btn_reset_pos" title="Reposiciona o rebocador no centro e reinicia velocidades.">Reset Posição</button>
+        </div>
+        <h3 class="text-sm font-semibold mt-2">Básicas</h3>
+        <div class="grid grid-cols-3 gap-2">
+            <button class="btn btn-blue py-2" data-maneuver="Avante Manobra" title="Avante de precisão. Pods 0°, ~35% de potência.">Avante M</button>
+            <button class="btn btn-blue py-2" data-maneuver="Avante Serviço" title="Avante operacional. Pods 0°, ~55% de potência.">Avante S</button>
+            <button class="btn btn-blue py-2" data-maneuver="Avante Cheia" title="Avante forte. Pods 0°, ~85% de potência.">Avante C</button>
+            <button class="btn btn-blue py-2" data-maneuver="Ré Manobra" title="Ré de precisão. Pods 180°, ~30–35% de potência.">Ré M</button>
+            <button class="btn btn-blue py-2" data-maneuver="Ré Serviço" title="Ré operacional. Pods 180°, ~55% de potência.">Ré S</button>
+            <button class="btn btn-blue py-2" data-maneuver="Ré Cheia" title="Ré forte. Pods 180°, ~85% de potência.">Ré C</button>
+        </div>
+        <h3 class="text-sm font-semibold mt-2">Lateral / Diagonal</h3>
+        <div class="grid grid-cols-3 gap-2">
+            <button class="btn btn-blue py-2" data-maneuver="Lateral BE" title="Translação para Boreste com leve toe-in para reduzir guinada.">Lateral BE</button>
+            <button class="btn btn-blue py-2" data-maneuver="Lateral BB" title="Translação para Bombordo com leve toe-in para reduzir guinada.">Lateral BB</button>
+            <button class="btn btn-blue py-2" data-maneuver="Diagonal Av BE" title="Avante com componente para Boreste (pods ~45°).">Diag Av BE</button>
+            <button class="btn btn-blue py-2" data-maneuver="Diagonal Av BB" title="Avante com componente para Bombordo (pods ~-45°).">Diag Av BB</button>
+            <button class="btn btn-blue py-2" data-maneuver="Diagonal Ré BE" title="Ré com componente para Boreste (pods ~135°).">Diag Ré BE</button>
+            <button class="btn btn-blue py-2" data-maneuver="Diagonal Ré BB" title="Ré com componente para Bombordo (pods ~-135°).">Diag Ré BB</button>
+        </div>
+        <h3 class="text-sm font-semibold mt-2">Giros</h3>
+        <div class="grid grid-cols-3 gap-2">
+            <button class="btn btn-blue py-2" data-maneuver="Giro Horário (manobra)" title="Par de momentos opostos para guinar horário (moderado).">Giro H M</button>
+            <button class="btn btn-blue py-2" data-maneuver="Giro Anti-Hor (manobra)" title="Par de momentos opostos para guinar anti-horário (moderado).">Giro AH M</button>
+            <button class="btn btn-blue py-2" data-maneuver="Giro Horário (forte)" title="Guinada horário forte com mais potência.">Giro H F</button>
+            <button class="btn btn-blue py-2" data-maneuver="Giro Anti-Hor (forte)" title="Guinada anti-horário forte com mais potência.">Giro AH F</button>
+        </div>
+        <h3 class="text-sm font-semibold mt-2">Aproximação / Empurrar</h3>
+        <div class="grid grid-cols-3 gap-2">
+            <button class="btn btn-blue py-2" data-maneuver="Aprox Ré + BE" title="Aproximação de ré com leve deriva para Boreste.">Aprox Ré BE</button>
+            <button class="btn btn-blue py-2" data-maneuver="Aprox Ré + BB" title="Aproximação de ré com leve deriva para Bombordo.">Aprox Ré BB</button>
+            <button class="btn btn-blue py-2" data-maneuver="Empurrar BE" title="Empuxo paralelo ao cais à Boreste; correção anti-guinada.">Empurrar BE</button>
+            <button class="btn btn-blue py-2" data-maneuver="Empurrar BB" title="Empuxo paralelo ao cais à Bombordo; correção anti-guinada.">Empurrar BB</button>
+        </div>
+        <div class="resize-handle"></div>
+    </div>
+
+    <!-- Buoy Control -->
+    <div class="card draggable-panel" style="width: 420px; top: 1rem; left: calc(100% - 430px);">
+      <h2 class="text-lg font-semibold mb-2 text-center drag-handle">Controle das Bóias</h2>
+      <div class="grid grid-cols-2 gap-2">
+        <button id="add-green-buoy-btn" class="btn btn-green py-2">Add Verde</button>
+        <button id="add-red-buoy-btn" class="btn btn-red py-2">Add Vermelha</button>
+        <button id="edit-buoys-btn" class="btn btn-blue py-2 col-span-1">Apagar Bóias</button>
+        <button id="clear-buoys-btn" class="btn btn-orange py-2 col-span-1">Limpar Bóias</button>
+      </div>
+      <p class="text-xs text-gray-400 mt-2 text-center">Clique no canvas para posicionar. <kbd>ESC</kbd> cancela.</p>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- Towable Blocks -->
+    <div class="card draggable-panel" style="width: 420px; top: 9.5rem; left: calc(100% - 430px);">
+      <h2 class="text-lg font-semibold mb-2 text-center drag-handle">Blocos Rebocáveis</h2>
+      <div class="grid grid-cols-2 gap-2">
+        <button id="add-block-btn" class="btn btn-green py-2">Add Bloco</button>
+        <button id="clear-blocks-btn" class="btn btn-orange py-2">Limpar Blocos</button>
+        <button id="btn_attach_tow" class="btn btn-blue py-2">Engatar</button>
+        <button id="btn_detach_tow" class="btn btn-red py-2">Desengatar</button>
+      </div>
+      <p class="text-xs text-gray-400 mt-2 text-center">
+        Engate automático de ré ou use os botões. Pressione <kbd>D</kbd> para soltar.
+      </p>
+      <div class="resize-handle"></div>
+    </div>
+    
+    <!-- Block Configuration -->
+    <div class="card draggable-panel" style="width: 420px; top: 18.5rem; left: calc(100% - 430px);">
+      <h2 class="text-lg font-semibold mb-2 text-center drag-handle">Configuração do Bloco</h2>
+      <div class="grid grid-cols-1 gap-3">
+        <div>
+          <label class="text-sm">Largura: <span id="lbl_block_width" class="value-pill"></span></label>
+          <input id="sld_block_width" type="range" min="20" max="150" step="1" title="Largura do bloco (máx 3x largura do rebocador)">
+        </div>
+        <div>
+          <label class="text-sm">Comprimento: <span id="lbl_block_height" class="value-pill"></span></label>
+          <input id="sld_block_height" type="range" min="20" max="300" step="1" title="Comprimento do bloco (máx 3x comprimento do rebocador)">
+        </div>
+        <div>
+          <label class="text-sm">Peso (Massa): <span id="lbl_block_mass" class="value-pill"></span></label>
+          <input id="sld_block_mass" type="range" min="500" max="10000" step="100" title="Massa do bloco">
+        </div>
+        <div>
+          <label class="text-sm">Arrasto (Calado): <span id="lbl_block_drag" class="value-pill"></span></label>
+          <input id="sld_block_drag" type="range" min="0.05" max="0.8" step="0.01" title="Coeficiente de arrasto (simula o calado)">
+        </div>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- Tow Cable -->
+    <div class="card draggable-panel" style="width: 420px; top: 32rem; left: calc(100% - 430px);">
+      <h2 class="text-lg font-semibold mb-2 text-center drag-handle">Reboque (Cabo)</h2>
+      <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+        <div>
+          <label class="text-sm">Raio de Captura (px) <span id="lbl_tow_attach" class="value-pill"></span></label>
+          <input id="sld_tow_attach" type="range" min="40" max="200" step="1" title="Distância máxima para auto-engatar ao aproximar de ré">
+        </div>
+
+<!-- Atracação - Cabos Individuais -->
+<div class="card draggable-panel" style="width: 360px; top: 48rem; left: calc(100% - 370px);">
+  <h2 class="text-lg font-semibold mb-2 text-center drag-handle">Atracação (Cabos Individuais)</h2>
+  <div class="grid grid-cols-2 gap-2 mt-2 p-2">
+    <button id="moor-bow-0" class="btn btn-green w-full py-2 px-4 rounded-lg disabled:opacity-50" disabled>Proa C1</button>
+    <button id="moor-bow-1" class="btn btn-green w-full py-2 px-4 rounded-lg disabled:opacity-50" disabled>Proa C2</button>
+    <button id="moor-stern-0" class="btn btn-green w-full py-2 px-4 rounded-lg disabled:opacity-50" disabled>Popa C1</button>
+    <button id="moor-stern-1" class="btn btn-green w-full py-2 px-4 rounded-lg disabled:opacity-50" disabled>Popa C2</button>
+  </div>
+</div>
+
+        <div>
+          <label class="text-sm">Cone Atrás (°) <span id="lbl_tow_cone" class="value-pill"></span></label>
+          <input id="sld_tow_cone" type="range" min="10" max="80" step="1" title="Ângulo do cone atrás do casco para detectar ré">
+        </div>
+        <div>
+          <label class="text-sm">Vel. Fechamento (px/s) <span id="lbl_tow_closing" class="value-pill"></span></label>
+          <input id="sld_tow_closing" type="range" min="0" max="20" step="1" title="Velocidade mínima de aproximação para engatar">
+        </div>
+        <div>
+          <label class="text-sm">Rigidez k <span id="lbl_tow_k" class="value-pill"></span></label>
+          <input id="sld_tow_k" type="range" min="20" max="400" step="1" title="Rigidez do cabo (mola); maior = puxa mais forte">
+        </div>
+        <div>
+          <label class="text-sm">Amortecimento c <span id="lbl_tow_c" class="value-pill"></span></label>
+          <input id="sld_tow_c" type="range" min="0" max="200" step="1" title="Amortecimento do cabo; maior = menos oscilação">
+        </div>
+        <div>
+          <label class="text-sm">Folga Mín. (px) <span id="lbl_tow_slack" class="value-pill"></span></label>
+          <input id="sld_tow_slack" type="range" min="0" max="120" step="1" title="Comprimento sem tração; cabo só tensiona acima disso">
+        </div>
+        <div class="col-span-2">
+          <label class="text-sm">Compr. Máx. (px) <span id="lbl_tow_max" class="value-pill"></span></label>
+          <input id="sld_tow_max" type="range" min="80" max="400" step="1" title="Limite superior de alongamento do cabo">
+        </div>
+        <div class="col-span-2">
+          <label class="text-sm">Ruptura (força) <span id="lbl_tow_break" class="value-pill"></span></label>
+          <input id="sld_tow_break" type="range" min="500" max="8000" step="50" title="Força de ruptura; acima disso o cabo solta">
+        </div>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+    
+    <!-- Profiles Panel -->
+    <div class="card draggable-panel" style="width: 360px; top: 52rem; left: calc(100% - 820px);">
+        <h2 class="text-lg font-semibold mb-2 text-center drag-handle">Perfis (Fixos)</h2>
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <button class="btn btn-blue py-2" data-preset="portoReativo">Porto Reativo</button>
+          <button class="btn btn-green py-2" data-preset="reboquePesado">Reboque Pesado</button>
+          <button class="btn btn-orange py-2" data-preset="escoltaRapida">Escolta Rápida</button>
+        </div>
+        <div>
+          <label class="text-sm">Amplificação (Treino): <span id="lbl_boost" class="value-pill">x1.0</span></label>
+          <input id="sld_boost" type="range" min="0.5" max="3" step="0.1" value="1"
+                 title="Multiplicador global de resposta (força e rampas)">
+        </div>
+        <div class="resize-handle"></div>
+    </div>
+    
+    <!-- Fine Tuning Panel -->
+    <div class="card draggable-panel" style="width: 420px; top: 50rem; left: calc(100% - 430px);">
+        <h2 class="text-lg font-semibold mb-2 text-center drag-handle">Ajuste Fino (Preset Ativo)</h2>
+        <div class="grid gap-3">
+          <div>
+            <label class="text-sm">Cd_long <span id="lbl_Cd_long" class="value-pill"></span></label>
+            <input id="sld_Cd_long" type="range" min="0.02" max="0.12" step="0.005"
+                   title="Coeficiente de arrasto longitudinal — resistência ao avanço do casco">
+          </div>
+          <div>
+            <label class="text-sm">Cd_lat <span id="lbl_Cd_lat" class="value-pill"></span></label>
+            <input id="sld_Cd_lat" type="range" min="0.10" max="0.60" step="0.01"
+                   title="Coeficiente de arrasto lateral — resistência ao movimento lateral">
+          </div>
+          <div>
+            <label class="text-sm">AngDragBase <span id="lbl_angBase" class="value-pill"></span></label>
+            <input id="sld_angBase" type="range" min="50000" max="250000" step="5000"
+                   title="Arrasto angular base — resistência constante à rotação">
+          </div>
+          <div>
+            <label class="text-sm">AngDragK <span id="lbl_angK" class="value-pill"></span></label>
+            <input id="sld_angK" type="range" min="20000" max="200000" step="5000"
+                   title="Ganho do arrasto angular com a velocidade de avanço">
+          </div>
+          <div>
+            <label class="text-sm">%/s Potência <span id="lbl_powerSlew" class="value-pill"></span></label>
+            <input id="sld_powerSlew" type="range" min="10" max="250" step="1"
+                   title="Velocidade de rampa da potência dos pods (% por segundo)">
+          </div>
+          <div>
+            <label class="text-sm">°/s Ângulo <span id="lbl_angleSlew" class="value-pill"></span></label>
+            <input id="sld_angleSlew" type="range" min="30" max="360" step="1"
+                   title="Velocidade de rampa do ângulo dos pods (graus por segundo)">
+          </div>
+          <div>
+            <label class="text-sm">maxForce <span id="lbl_maxForce" class="value-pill"></span></label>
+            <input id="sld_maxForce" type="range" min="20" max="120" step="1"
+                   title="Empuxo máximo por pod (escala do simulador)">
+          </div>
+          <div>
+  <label class="text-sm">Pivot Máx (fração L) <span id="lbl_pivotFrac" class="value-pill"></span></label>
+  <input id="sld_pivotFrac" type="range" min="0.10" max="0.50" step="0.01"
+         title="Fraçao do comprimento para avanço/recuo do ponto pivot">
+</div>
+<div>
+  <label class="text-sm">Pivot Vref (px/s) <span id="lbl_pivotVref" class="value-pill"></span></label>
+  <input id="sld_pivotVref" type="range" min="120" max="400" step="5"
+         title="Velocidade de referência para saturação do deslocamento do pivot">
+</div>
+<div>
+  <label class="text-sm">Escolta K <span id="lbl_escortK" class="value-pill"></span></label>
+  <input id="sld_escortK" type="range" min="0" max="0.006" step="0.0001"
+         title="Ganho da força lateral de escolta (escala do simulador)">
+</div>
+<div>
+  <label class="text-sm">Escolta X (L adim) <span id="lbl_escortX" class="value-pill"></span></label>
+  <input id="sld_escortX" type="range" min="-0.60" max="0" step="0.01"
+         title="Posição longitudinal para aplicar a força de escolta (negativo = ré)">
+</div>
+<button id="btn_reset_defaults" class="btn btn-orange py-2">Restaurar Defaults do Preset</button>
+        </div>
+        <div class="resize-handle"></div>
+    </div>
+
+  </div>
+  
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+        // --- SIMULATION LOGIC ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const speedDisplay = document.getElementById('speed-display');
+        const hud = document.getElementById('hud');
+
+        const degToRad = d => d * Math.PI / 180;
+        const radToDeg = r => r * 180 / Math.PI;
+        const idlePower = 20;
+
+        const PRESETS = {
+    portoReativo: {
+        Cd_long: 0.030, Cd_lat: 0.150,
+        angBase: 82000, angK: 52000,
+        powerSlew: 60, angleSlewDeg: 120, maxForce: 60,
+        pivotMaxFrac: 0.35, pivotVref: 220,
+        escortK: 0, escortX: -0.35
+    },
+    reboquePesado: {
+        Cd_long: 0.043, Cd_lat: 0.238,
+        angBase: 110000, angK: 80000,
+        powerSlew: 45, angleSlewDeg: 90, maxForce: 54,
+        pivotMaxFrac: 0.30, pivotVref: 200,
+        escortK: 0, escortX: -0.40
+    },
+    escoltaRapida: {
+        Cd_long: 0.026, Cd_lat: 0.170,
+        angBase: 95000, angK: 105000,
+        powerSlew: 80, angleSlewDeg: 150, maxForce: 66,
+        pivotMaxFrac: 0.40, pivotVref: 240,
+        escortK: 0.0028, escortX: -0.42
+    }
+};
+
+// --- Cabos individuais por cabeço ---
+let mooringLines = {
+  bow:   [false, false],   // Proa -> C1, C2
+  stern: [false, false]    // Popa -> C1, C2
+};
+
+const MOOR = {
+  activationRadius: 36,    // px (ajustado)
+  maxApproachSpeed: 0.80,  // (ajustado)
+  showZones: true
+};
+
+        let SIM = { preset: 'portoReativo', boostFactor: 1.0, ...PRESETS.portoReativo };
+
+        const TOW = { attachRadius: 90, backConeDeg: 35, minClosingSpeed: 2, k: 140, c: 24, slackMin: 30, maxLen: 220, breakForce: 3800 };
+        
+        let BLOCK_CONFIG = {
+            width: 60,
+            height: 60,
+            mass: 800,
+            drag: 0.2 
+        };
+
+        const initialTugState = {
+            x: 0, y: 0, width: 50, height: 100, angle: 0,
+            vx: 0, vy: 0, va: 0, mass: 2500, inertia: 2000000,
+            thrusters: [
+                { id: 1, x: 15, y: 35, commandJetAngle: degToRad(90), currentJetAngle: degToRad(90), commandPower: idlePower, currentPower: idlePower },
+                { id: 2, x: -15, y: 35, commandJetAngle: degToRad(-90), currentJetAngle: degToRad(-90), commandPower: idlePower, currentPower: idlePower }
+            ]
+        };
+        let tug = {};
+        let buoys = [];
+        let pier = {};
+        let dragging = false, selectedBuoy = null, dragOffsetX = 0, dragOffsetY = 0, isBuoyEditMode = false;
+        let placingBuoy = null;
+
+        let blocks = [];
+        let draggingBlock = null;
+        let dragBlockOffX = 0, dragBlockOffY = 0;
+        let tow = null;
+
+        function setupScenario(fullReset = false) {
+            pier = {
+                x: canvas.width - 50, y: canvas.height / 2 - 150, width: 50, height: 300,
+                bollards: [{ x: canvas.width - 25, y: canvas.height / 2 - 100 }, { x: canvas.width - 25, y: canvas.height / 2 + 100 }]
+            };
+            if (fullReset) {
+                buoys = []; blocks = []; tow = null;
+            }
+        }
+
+        const p1_angle_slider = document.getElementById('p1_angle');
+        const p1_power_slider = document.getElementById('p1_power');
+        const p2_angle_slider = document.getElementById('p2_angle');
+        const p2_power_slider = document.getElementById('p2_power');
+        const p1_angle_val = document.getElementById('p1_angle_val');
+        const p1_power_val = document.getElementById('p1_power_val');
+        const p2_angle_val = document.getElementById('p2_angle_val');
+        const p2_power_val = document.getElementById('p2_power_val');
+
+        p1_angle_slider.addEventListener('input', (e) => { tug.thrusters[0].commandJetAngle = degToRad(parseFloat(e.target.value)); updatePodSliders(); });
+        p1_power_slider.addEventListener('input', (e) => { tug.thrusters[0].commandPower = parseFloat(e.target.value); updatePodSliders(); });
+        p2_angle_slider.addEventListener('input', (e) => { tug.thrusters[1].commandJetAngle = degToRad(parseFloat(e.target.value)); updatePodSliders(); });
+        p2_power_slider.addEventListener('input', (e) => { tug.thrusters[1].commandPower = parseFloat(e.target.value); updatePodSliders(); });
+
+        function updatePodSliders() {
+            if (!tug.thrusters) return;
+            p1_angle_slider.value = radToDeg(tug.thrusters[0].commandJetAngle);
+            p1_power_slider.value = tug.thrusters[0].commandPower;
+            p2_angle_slider.value = radToDeg(tug.thrusters[1].commandJetAngle);
+            p2_power_slider.value = tug.thrusters[1].commandPower;
+            p1_angle_val.textContent = Math.round(p1_angle_slider.value) + '°';
+            p1_power_val.textContent = Math.round(p1_power_slider.value) + '%';
+            p2_angle_val.textContent = Math.round(p2_angle_slider.value) + '°';
+            p2_power_val.textContent = Math.round(p2_power_slider.value) + '%';
+        }
+
+        const maneuvers = {
+            'Parada Normal': { p1a: 90, p1p: idlePower, p2a: -90, p2p: idlePower },
+            'Avante Manobra': { p1a: 0, p1p: 35, p2a: 0, p2p: 35 },
+            'Avante Serviço': { p1a: 0, p1p: 55, p2a: 0, p2p: 55 },
+            'Avante Cheia': { p1a: 0, p1p: 85, p2a: 0, p2p: 85 },
+            'Ré Manobra': { p1a: 180, p1p: 35, p2a: 180, p2p: 35 },
+            'Ré Serviço': { p1a: 180, p1p: 55, p2a: 180, p2p: 55 },
+            'Ré Cheia': { p1a: 180, p1p: 85, p2a: 180, p2p: 85 },
+            'Lateral BE': { p1a: 100, p1p: 46,  p2a: 80,  p2p: 44 },
+            'Lateral BB': { p1a: -100, p1p: 44, p2a: -80, p2p: 46 },
+            'Diagonal Av BE': { p1a: 45, p1p: 50, p2a: 45, p2p: 50 },
+            'Diagonal Av BB': { p1a: -45, p1p: 50, p2a: -45, p2p: 50 },
+            'Diagonal Ré BE': { p1a: 135, p1p: 50, p2a: 135, p2p: 50 },
+            'Diagonal Ré BB': { p1a: -135, p1p: 50, p2a: -135, p2p: 50 },
+            'Giro Horário (manobra)': { p1a: 45, p1p: 45, p2a: -45, p2p: 45 },
+            'Giro Anti-Hor (manobra)': { p1a: -45, p1p: 45, p2a: 45, p2p: 45 },
+            'Giro Horário (forte)': { p1a: 45, p1p: 75, p2a: -45, p2p: 75 },
+            'Giro Anti-Hor (forte)': { p1a: -45, p1p: 75, p2a: 45, p2p: 75 },
+            'Aprox Ré + BE': { p1a: 160, p1p: 30, p2a: -160, p2p: 30 },
+            'Aprox Ré + BB': { p1a: -160, p1p: 30, p2a: 160, p2p: 30 },
+            'Empurrar BE': { p1a: 10, p1p: 50, p2a: -10, p2p: 50 },
+            'Empurrar BB': { p1a: -10, p1p: 50, p2a: 10, p2p: 50 },
+        };
+        function setManeuver(name) {
+            const m = maneuvers[name];
+            if (!m) return;
+            tug.thrusters[0].commandJetAngle = degToRad(m.p2a);
+            tug.thrusters[0].commandPower = m.p2p;
+            tug.thrusters[1].commandJetAngle = degToRad(m.p1a);
+            tug.thrusters[1].commandPower = m.p1p;
+            updatePodSliders();
+        }
+        
+        // Buoys UI
+        const addGreenBuoyBtn = document.getElementById('add-green-buoy-btn');
+        const addRedBuoyBtn = document.getElementById('add-red-buoy-btn');
+        const editBuoysBtn = document.getElementById('edit-buoys-btn');
+        const clearBuoysBtn = document.getElementById('clear-buoys-btn');
+
+        function addBuoy(color) {
+            const nextId = buoys.length ? Math.max(...buoys.map(b => b.id)) + 1 : 0;
+            placingBuoy = { id: nextId, x:-1000, y:-1000, originalX:-1000, originalY:-1000, radius:15, color, vx:0, vy:0, mass:50 };
+        }
+        addGreenBuoyBtn.addEventListener('click', ()=> addBuoy('#22c55e'));
+        addRedBuoyBtn.addEventListener('click', ()=> addBuoy('#ef4444'));
+        clearBuoysBtn.addEventListener('click', ()=>{ buoys = []; });
+
+        editBuoysBtn.addEventListener('click', () => {
+            isBuoyEditMode = !isBuoyEditMode;
+            editBuoysBtn.textContent = isBuoyEditMode ? 'Concluir' : 'Apagar Bóias';
+            editBuoysBtn.classList.toggle('btn-red', isBuoyEditMode);
+            editBuoysBtn.classList.toggle('btn-blue', !isBuoyEditMode);
+        });
+
+        // Blocos UI
+        const addBlockBtn    = document.getElementById('add-block-btn');
+        const clearBlocksBtn = document.getElementById('clear-blocks-btn');
+        const attachBtn      = document.getElementById('btn_attach_tow');
+        const detachBtn      = document.getElementById('btn_detach_tow');
+
+        function addBlock() {
+            const b = {
+                id: blocks.length ? Math.max(...blocks.map(bb=>bb.id)) + 1 : 0,
+                x: canvas.width/2 + (Math.random()*120-60),
+                y: canvas.height/2 + (Math.random()*120-60),
+                vx: 0, vy: 0,
+                width: BLOCK_CONFIG.width,
+                height: BLOCK_CONFIG.height,
+                mass: BLOCK_CONFIG.mass,
+                drag: BLOCK_CONFIG.drag,
+            };
+            blocks.push(b);
+        }
+        function clearBlocks(){ blocks = []; tow = null; }
+        
+        function manualAttach() {
+            if (tow || blocks.length === 0) return;
+            const stern = getSternWorldPos();
+            let closestBlock = null;
+            let minDistance = TOW.attachRadius;
+
+            for (const b of blocks) {
+                const dist = Math.hypot(b.x - stern.x, b.y - stern.y);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestBlock = b;
+                }
+            }
+
+            if (closestBlock) {
+                 tow = {
+                    blockId: closestBlock.id,
+                    restLen: Math.max(TOW.slackMin, minDistance - 12),
+                    k: TOW.k, c: TOW.c, maxLen: TOW.maxLen, breakForce: TOW.breakForce
+                };
+            }
+        }
+
+        addBlockBtn.addEventListener('click', addBlock);
+        clearBlocksBtn.addEventListener('click', clearBlocks);
+        attachBtn.addEventListener('click', manualAttach);
+        detachBtn.addEventListener('click', () => { tow = null; });
+        
+        // Maneuver buttons
+        document.getElementById('btn_stop').addEventListener('click', ()=> setManeuver('Parada Normal'));
+        document.getElementById('btn_reset_pos').addEventListener('click', ()=>window.resetSimulator());
+        document.querySelectorAll('button[data-maneuver]').forEach(btn=>{
+            btn.addEventListener('click', ()=> setManeuver(btn.getAttribute('data-maneuver')));
+        });
+        
+        // Profiles & Tuning UI
+        function highlightPresetButtons(){
+            document.querySelectorAll('button[data-preset]').forEach(btn => {
+                const active = btn.getAttribute('data-preset') === SIM.preset;
+                btn.style.outline = active ? '3px solid rgba(255,255,255,0.85)' : 'none';
+                btn.style.filter = active ? 'brightness(1.05)' : 'none';
+            });
+        }
+        function applyPreset(key){
+            if (!PRESETS[key]) return;
+            SIM = { preset: key, boostFactor: (SIM.boostFactor || 1.0), ...PRESETS[key] };
+            highlightPresetButtons(); 
+            writeMainSlidersFromSIM();
+        }
+        document.querySelectorAll('button[data-preset]').forEach(btn=>{
+            btn.addEventListener('click', ()=> applyPreset(btn.getAttribute('data-preset')));
+        });
+
+        (function wireBoost(){
+            const s = document.getElementById('sld_boost');
+            const lbl = document.getElementById('lbl_boost');
+            const write = () => { lbl.textContent = 'x' + (Number(SIM.boostFactor || 1).toFixed(1)); };
+            s.addEventListener('input', () => { SIM.boostFactor = parseFloat(s.value) || 1.0; write(); });
+            s.addEventListener('change', () => { SIM.boostFactor = parseFloat(s.value) || 1.0; write(); });
+            s.value = SIM.boostFactor || 1.0; write();
+        })();
+
+        let __suspendMainSliders = false, __debTimer = null;
+        function writeMainSlidersFromSIM(){
+            __suspendMainSliders = true;
+            const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+            const lbl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            set('sld_Cd_long', SIM.Cd_long); lbl('lbl_Cd_long', SIM.Cd_long.toFixed(3));
+            set('sld_Cd_lat',  SIM.Cd_lat ); lbl('lbl_Cd_lat',  SIM.Cd_lat.toFixed(3));
+            set('sld_angBase', SIM.angBase); lbl('lbl_angBase', Math.round(SIM.angBase));
+            set('sld_angK',    SIM.angK   ); lbl('lbl_angK',    Math.round(SIM.angK));
+            set('sld_powerSlew', SIM.powerSlew); lbl('lbl_powerSlew', Math.round(SIM.powerSlew));
+            set('sld_angleSlew', SIM.angleSlewDeg); lbl('lbl_angleSlew', Math.round(SIM.angleSlewDeg));
+            set('sld_maxForce', SIM.maxForce); lbl('lbl_maxForce', Math.round(SIM.maxForce));
+            const fmt = (n, d=2) => Number(n).toFixed(d);
+            set('sld_pivotFrac', SIM.pivotMaxFrac || 0.35); lbl('lbl_pivotFrac', fmt(SIM.pivotMaxFrac || 0.35, 2));
+            set('sld_pivotVref', SIM.pivotVref || 220);     lbl('lbl_pivotVref', Math.round(SIM.pivotVref || 220));
+            set('sld_escortK',  SIM.escortK || 0);          lbl('lbl_escortK', fmt(SIM.escortK || 0, 4));
+            set('sld_escortX',  SIM.escortX || -0.35);      lbl('lbl_escortX', fmt(SIM.escortX || -0.35, 2));
+            __suspendMainSliders = false;
+        }
+        function applySIMFromMainSliders(){
+            if (__suspendMainSliders) return;
+            clearTimeout(__debTimer);
+            __debTimer = setTimeout(() => {
+                const num = id => parseFloat(document.getElementById(id).value);
+                SIM.Cd_long = num('sld_Cd_long');
+                SIM.Cd_lat  = num('sld_Cd_lat');
+                SIM.angBase = num('sld_angBase');
+                SIM.angK    = num('sld_angK');
+                SIM.powerSlew    = num('sld_powerSlew');
+                SIM.angleSlewDeg = num('sld_angleSlew');
+                SIM.maxForce     = num('sld_maxForce');
+                SIM.pivotMaxFrac = num('sld_pivotFrac');
+                SIM.pivotVref    = num('sld_pivotVref');
+                SIM.escortK      = num('sld_escortK');
+                SIM.escortX      = num('sld_escortX');
+                writeMainSlidersFromSIM(); // Re-use the write function to update labels
+            }, 120);
+        }
+        ['sld_Cd_long','sld_Cd_lat','sld_angBase','sld_angK','sld_powerSlew','sld_angleSlew','sld_maxForce','sld_pivotFrac','sld_pivotVref','sld_escortK','sld_escortX']
+            .forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', applySIMFromMainSliders);
+                    el.addEventListener('change', applySIMFromMainSliders);
+                }
+            });
+        document.getElementById('btn_reset_defaults').addEventListener('click', ()=>{
+            const key = SIM.preset;
+            SIM = { preset:key, boostFactor:(SIM.boostFactor||1.0), ...PRESETS[key] };
+            writeMainSlidersFromSIM();
+        });
+
+        (function wireTowSliders(){
+            const map = [
+                ['sld_tow_attach','lbl_tow_attach','attachRadius',  v=>`${Math.round(v)} px`],
+                ['sld_tow_cone',  'lbl_tow_cone',  'backConeDeg',   v=>`${Math.round(v)}°`],
+                ['sld_tow_closing','lbl_tow_closing','minClosingSpeed', v=>`${Math.round(v)} px/s`],
+                ['sld_tow_k',     'lbl_tow_k',     'k',             v=>`${Math.round(v)}`],
+                ['sld_tow_c',     'lbl_tow_c',     'c',             v=>`${Math.round(v)}`],
+                ['sld_tow_slack', 'lbl_tow_slack', 'slackMin',      v=>`${Math.round(v)} px`],
+                ['sld_tow_max',   'lbl_tow_max',   'maxLen',        v=>`${Math.round(v)} px`],
+                ['sld_tow_break', 'lbl_tow_break', 'breakForce',    v=>`${Math.round(v)}`],
+            ];
+            function write(){
+                map.forEach(([sid,lid,key,fmt])=>{
+                    const s = document.getElementById(sid);
+                    const l = document.getElementById(lid);
+                    s.value = TOW[key];
+                    l.textContent = fmt(TOW[key]);
+                });
+            }
+            function apply(){
+                map.forEach(([sid,lid,key,fmt])=>{
+                    const s = document.getElementById(sid);
+                    const l = document.getElementById(lid);
+                    const val = parseFloat(s.value);
+                    if (Number.isFinite(val)) TOW[key] = val;
+                    l.textContent = fmt(TOW[key]);
+                });
+            }
+            map.forEach(([sid])=>{
+                const s = document.getElementById(sid);
+                s.addEventListener('input', apply);
+                s.addEventListener('change', apply);
+            });
+            write();
+        })();
+        
+        (function wireBlockConfigSliders(){
+            const map = [
+                ['sld_block_width', 'lbl_block_width', 'width', v => `${Math.round(v)}`],
+                ['sld_block_height', 'lbl_block_height', 'height', v => `${Math.round(v)}`],
+                ['sld_block_mass', 'lbl_block_mass', 'mass', v => `${Math.round(v)}`],
+                ['sld_block_drag', 'lbl_block_drag', 'drag', v => `${v.toFixed(2)}`],
+            ];
+             function write(){
+                map.forEach(([sid,lid,key,fmt])=>{
+                    const s = document.getElementById(sid);
+                    const l = document.getElementById(lid);
+                    s.value = BLOCK_CONFIG[key];
+                    l.textContent = fmt(BLOCK_CONFIG[key]);
+                });
+            }
+            function apply(){
+                map.forEach(([sid,lid,key,fmt])=>{
+                    const s = document.getElementById(sid);
+                    const l = document.getElementById(lid);
+                    const val = parseFloat(s.value);
+                    if (Number.isFinite(val)) BLOCK_CONFIG[key] = val;
+                    l.textContent = fmt(BLOCK_CONFIG[key]);
+                });
+            }
+            map.forEach(([sid])=>{
+                const s = document.getElementById(sid);
+                s.addEventListener('input', apply);
+                s.addEventListener('change', apply);
+            });
+            write();
+        })();
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const mousePos = getMousePos(e);
+            if (placingBuoy) {
+                placingBuoy.x = mousePos.x; placingBuoy.y = mousePos.y;
+                placingBuoy.originalX = mousePos.x; placingBuoy.originalY = mousePos.y;
+                buoys.push(placingBuoy);
+                placingBuoy = null;
+                return;
+            }
+            for (let i = blocks.length - 1; i >= 0; i--) {
+                const b = blocks[i], halfW = b.width / 2, halfH = b.height / 2;
+                if (mousePos.x > b.x - halfW && mousePos.x < b.x + halfW && mousePos.y > b.y - halfH && mousePos.y < b.y + halfH) {
+                    draggingBlock = b;
+                    dragBlockOffX = mousePos.x - b.x;
+                    dragBlockOffY = mousePos.y - b.y;
+                    canvas.style.cursor = 'grabbing';
+                    return;
+                }
+            }
+            for (let i = buoys.length - 1; i >= 0; i--) {
+                const buoy = buoys[i];
+                const dist = Math.hypot(mousePos.x - buoy.x, mousePos.y - buoy.y);
+                if (dist < buoy.radius) {
+                    if (isBuoyEditMode) {
+                        buoys.splice(i, 1);
+                    } else {
+                        dragging = true;
+                        selectedBuoy = buoy;
+                        dragOffsetX = mousePos.x - buoy.x;
+                        dragOffsetY = mousePos.y - buoy.y;
+                        canvas.style.cursor = 'grabbing';
+                    }
+                    return;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const mousePos = getMousePos(e);
+            if (draggingBlock) {
+                draggingBlock.x = mousePos.x - dragBlockOffX;
+                draggingBlock.y = mousePos.y - dragBlockOffY;
+                return;
+            }
+            if (dragging && selectedBuoy) {
+                selectedBuoy.x = mousePos.x - dragOffsetX;
+                selectedBuoy.y = mousePos.y - dragOffsetY;
+                return;
+            }
+            if (placingBuoy) {
+                placingBuoy.x = mousePos.x;
+                placingBuoy.y = mousePos.y;
+                return;
+            }
+            let onObject = false;
+            for (const b of blocks) {
+                const halfW = b.width / 2, halfH = b.height / 2;
+                if (mousePos.x > b.x - halfW && mousePos.x < b.x + halfW && mousePos.y > b.y - halfH && mousePos.y < b.y + halfH) {
+                    canvas.style.cursor = 'grab'; onObject = true; break;
+                }
+            }
+            if (!onObject) {
+                for (const buoy of buoys) {
+                    if (Math.hypot(mousePos.x - buoy.x, mousePos.y - buoy.y) < buoy.radius) {
+                        canvas.style.cursor = isBuoyEditMode ? 'crosshair' : 'grab'; onObject = true; break;
+                    }
+                }
+            }
+            if (!onObject) { canvas.style.cursor = 'default'; }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (dragging && selectedBuoy) {
+                selectedBuoy.originalX = selectedBuoy.x;
+                selectedBuoy.originalY = selectedBuoy.y;
+            }
+            dragging = false; selectedBuoy = null; draggingBlock = null;
+            canvas.style.cursor = 'default';
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            if (dragging && selectedBuoy) {
+                selectedBuoy.originalX = selectedBuoy.x;
+                selectedBuoy.originalY = selectedBuoy.y;
+            }
+            dragging = false; selectedBuoy = null; draggingBlock = null;
+            canvas.style.cursor = 'default';
+        });
+
+        window.addEventListener('keydown', (ev)=>{
+            if (ev.key === 'Escape' && placingBuoy) placingBuoy = null;
+            if (ev.key === 'd' || ev.key === 'D') tow = null;
+        });
+
+        function getSternWorldPos() {
+            const h = tug.height; const lx = 0, ly = +h/2;
+            return {
+                x: tug.x + (lx * Math.cos(tug.angle) - ly * Math.sin(tug.angle)),
+                y: tug.y + (lx * Math.sin(tug.angle) + ly * Math.cos(tug.angle))
+            };
+        }
+
+        window.resetSimulator = function() {
+            tug = JSON.parse(JSON.stringify(initialTugState));
+            setupScenario(true);
+            tug.x = canvas.width/2; tug.y = canvas.height/2;
+            applyPreset(SIM.preset);
+            setManeuver('Parada Normal');
+            tug.thrusters.forEach(th => { th.currentPower = th.commandPower; th.currentJetAngle = th.commandJetAngle; });
+            updatePodSliders();
+        }
+
+        function autoAttachTow(){
+            if (tow || blocks.length === 0) return;
+            const stern = getSternWorldPos();
+            const backx = -Math.sin(tug.angle), backy = Math.cos(tug.angle);
+            const BACK_CONE_COS = Math.cos(TOW.backConeDeg * Math.PI/180);
+
+            const h = tug.height, lx = 0, ly = +h/2;
+            const rx = (lx * Math.cos(tug.angle) - ly * Math.sin(tug.angle));
+            const ry = (lx * Math.sin(tug.angle) + ly * Math.cos(tug.angle));
+            const sternVx = tug.vx + (-tug.va * ry);
+            const sternVy = tug.vy + (tug.va * rx);
+
+            for (const b of blocks) {
+                const dx = b.x - stern.x, dy = b.y - stern.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > TOW.attachRadius) continue;
+
+                const rnx = dx / Math.max(dist, 1e-6), rny = dy / Math.max(dist, 1e-6);
+                const behind = (rnx * backx + rny * backy) > BACK_CONE_COS;
+                if (!behind) continue;
+
+                const relVx = b.vx - sternVx, relVy = b.vy - sternVy;
+                const closing = -(relVx * rnx + relVy * rny);
+                const touching = dist < (TOW.slackMin + 15);
+                const gentle = closing >= TOW.minClosingSpeed;
+                if (!(gentle || touching)) continue;
+
+                tow = {
+                    blockId: b.id,
+                    restLen: Math.max(TOW.slackMin, dist - 12),
+                    k: TOW.k, c: TOW.c, maxLen: TOW.maxLen, breakForce: TOW.breakForce
+                };
+                break;
+            }
+        }
+
+        function towForces(dt){
+            if (!tow) return {fx:0, fy:0, torque:0};
+            const blk = blocks.find(bb => bb.id === tow.blockId);
+            if (!blk) { tow = null; return {fx:0, fy:0, torque:0}; }
+
+            const stern = getSternWorldPos();
+            const dx = blk.x - stern.x, dy = blk.y - stern.y;
+            const L  = Math.hypot(dx, dy);
+            if (L < 1e-3) return {fx:0, fy:0, torque:0};
+
+            const L_eff = Math.min(L, tow.maxLen);
+            const nx = dx/L, ny = dy/L;
+            const relVx = blk.vx - tug.vx, relVy = blk.vy - tug.vy;
+            const vRelN = relVx*nx + relVy*ny;
+
+            let T = 0;
+            if (L_eff > tow.restLen) {
+                T = tow.k * (L_eff - tow.restLen) + tow.c * vRelN;
+                if (T < 0) T = 0;
+            }
+            if (T > tow.breakForce) { tow = null; return {fx:0, fy:0, torque:0}; }
+
+            if (T > 0) {
+                const Fx = T*nx, Fy = T*ny;
+                blk.vx -= (Fx / blk.mass) * dt;
+                blk.vy -= (Fy / blk.mass) * dt;
+                const h = tug.height, lx = 0, ly = +h/2;
+                const rx = (lx * Math.cos(tug.angle) - ly * Math.sin(tug.angle));
+                const ry = (lx * Math.sin(tug.angle) + ly * Math.cos(tug.angle));
+                return { fx: Fx, fy: Fy, torque: rx * Fy - ry * Fx };
+            }
+            return {fx:0, fy:0, torque:0};
+        }
+
+        function getTugMooringPoint(part) {
+    const localX = tug.width / 2;
+    const localY = (part === 'bow') ? -tug.height / 2 + 20 : tug.height / 2 - 20;
+    const cosA = Math.cos(tug.angle);
+    const sinA = Math.sin(tug.angle);
+    return {
+        x: tug.x + (localX * cosA - localY * sinA),
+        y: tug.y + (localX * sinA + localY * cosA)
+    };
+}
+
+function applyMooringConstraint(part, bollard) {
+    const k = 20;    // rigidez (v3_1)
+    const c = 40;    // amortecimento (v3_1)
+    const maxMooringForce = 10; // limite (v3_1)
+
+    const worldPos = getTugMooringPoint(part);
+    const r = { x: worldPos.x - tug.x, y: worldPos.y - tug.y };
+    const pointVel = { x: tug.vx - tug.va * r.y, y: tug.vy + tug.va * r.x };
+    const displacement = { x: bollard.x - worldPos.x, y: bollard.y - worldPos.y };
+
+    const springForce = { x: displacement.x * k, y: displacement.y * k };
+    const dampingForce = { x: -pointVel.x * c, y: -pointVel.y * c };
+    let fx = springForce.x + dampingForce.x;
+    let fy = springForce.y + dampingForce.y;
+
+    const mag = Math.hypot(fx, fy);
+    const clamp = Math.min(mag, maxMooringForce) / (mag || 1);
+    fx *= clamp; fy *= clamp;
+
+    const torque = r.x * fy - r.y * fx;
+    return { force: { x: fx, y: fy }, torque };
+}
+
+function update(dt) {
+            if (!tug.thrusters) return;
+            const POWER_SLEW_PER_SEC = SIM.powerSlew * (SIM.boostFactor || 1.0);
+            const ANGLE_SLEW_DEG_PER_SEC = SIM.angleSlewDeg * (SIM.boostFactor || 1.0);
+            const angleSlew = (ANGLE_SLEW_DEG_PER_SEC * Math.PI/180) * dt;
+            const powerSlew = POWER_SLEW_PER_SEC * dt;
+            tug.thrusters.forEach(th => {
+                if (th.currentPower < th.commandPower) th.currentPower = Math.min(th.commandPower, th.currentPower + powerSlew);
+                else if (th.currentPower > th.commandPower) th.currentPower = Math.max(th.commandPower, th.currentPower - powerSlew);
+                let d = th.commandJetAngle - th.currentJetAngle;
+                d = Math.atan2(Math.sin(d), Math.cos(d));
+                if (d > angleSlew) th.currentJetAngle += angleSlew;
+                else if (d < -angleSlew) th.currentJetAngle -= angleSlew;
+                else th.currentJetAngle = th.commandJetAngle;
+            });
+            let totalForceX = 0, totalForceY = 0, totalTorque = 0;
+            const maxForce = SIM.maxForce * (SIM.boostFactor || 1.0);
+            tug.thrusters.forEach(th => {
+                const ang = tug.angle + th.currentJetAngle; const mag = (th.currentPower/100) * maxForce;
+                const fx = Math.sin(ang) * mag; const fy = -Math.cos(ang) * mag;
+                totalForceX += fx; totalForceY += fy;
+                const rx = th.x * Math.cos(tug.angle) - th.y * Math.sin(tug.angle);
+                const ry = th.x * Math.sin(tug.angle) + th.y * Math.cos(tug.angle);
+                totalTorque += rx * fy - ry * fx;
+            });
+            const localVx = tug.vx * Math.cos(-tug.angle) - tug.vy * Math.sin(-tug.angle);
+            const localVy = tug.vx * Math.sin(-tug.angle) + tug.vy * Math.cos(-tug.angle);
+            const dragLocalX = -SIM.Cd_long * localVx * Math.abs(localVx);
+            const dragLocalY = -SIM.Cd_lat  * localVy * Math.abs(localVy);
+            const dragX = dragLocalX * Math.cos(tug.angle) - dragLocalY * Math.sin(tug.angle);
+            const dragY = dragLocalX * Math.sin(tug.angle) + dragLocalY * Math.cos(tug.angle);
+            totalForceX += dragX; totalForceY += dragY;
+            const speedLocal = Math.hypot(localVx, localVy);
+            const angularDragCoeff = SIM.angBase + SIM.angK * speedLocal;
+            totalTorque += -tug.va * angularDragCoeff;
+
+            // --- Ponto Pivot Móvel (torque adicional do arrasto lateral) ---
+{
+    const L = tug.height;
+    const vx = localVx;
+    const pivotFrac = (SIM.pivotMaxFrac || 0.35);
+    const vref = Math.max(1e-6, (SIM.pivotVref || 220));
+    const pivotShiftX = pivotFrac * L * Math.tanh(vx / vref); // avante positivo, ré negativo
+    const torquePivot = pivotShiftX * dragLocalY; // momento = braço x força lateral local
+    totalTorque += torquePivot;
+}
+
+// --- Força de Escolta / Indirect Towing (lift ~ V^2 * sin(2β)) ---
+{
+    const V = Math.hypot(localVx, localVy);
+    if ((SIM.escortK || 0) > 0 && V > 1) {
+        const beta = Math.atan2(localVy, Math.abs(localVx) + 1e-6); // ângulo de deriva
+        const Llift = (SIM.escortK) * V * V * Math.sin(2 * beta);
+        const Fy_local = Llift; // direção lateral no referencial do casco
+        // converter para mundo
+        const Fx_world = -Fy_local * Math.sin(tug.angle);
+        const Fy_world =  Fy_local * Math.cos(tug.angle);
+        totalForceX += Fx_world;
+        totalForceY += Fy_world;
+        // aplicar torque em posição longitudinal escolhida (fração de L)
+        const rx_local = (SIM.escortX || -0.35) * tug.height;
+        totalTorque += rx_local * Fy_local;
+    }
+}
+autoAttachTow();
+            const towForce = towForces(dt);
+            totalForceX += towForce.fx;
+            totalForceY += towForce.fy;
+            
+            // Cabos individuais (Proa/Popa em C1/C2)
+[['bow',0],['bow',1],['stern',0],['stern',1]].forEach(([part,idx]) => {
+    if (mooringLines[part][idx] && pier && pier.bollards && pier.bollards[idx]) {
+        const result = applyMooringConstraint(part, pier.bollards[idx]);
+        totalForceX += result.force.x;
+        totalForceY += result.force.y;
+        totalTorque += result.torque;
+    }
+});
+updateMooringStatus();
+totalTorque += towForce.torque;
+
+            const ax = totalForceX / tug.mass, ay = totalForceY / tug.mass, aa = totalTorque / tug.inertia;
+            tug.vx += ax * dt; tug.vy += ay * dt; tug.va += aa * dt;
+            tug.x += tug.vx * dt; tug.y += tug.vy * dt; tug.angle += tug.va * dt;
+            buoys.forEach(buoy => {
+                if (buoy !== selectedBuoy) {
+                    const returnForce = 0.001;
+buoy.vx += (buoy.originalX - buoy.x) * returnForce;
+                    buoy.vy += (buoy.originalY - buoy.y) * returnForce;
+                }
+                buoy.x += buoy.vx * dt; buoy.y += buoy.vy * dt;
+                buoy.vx *= Math.pow(0.95, dt*60); buoy.vy *= Math.pow(0.95, dt*60);
+            });
+            blocks.forEach(b => {
+                if (draggingBlock !== b) {
+                    const speed = Math.hypot(b.vx, b.vy);
+                    if (speed > 0.1) {
+                        const dragMagnitude = -b.drag * speed * speed;
+                        const dragForceX = (b.vx / speed) * dragMagnitude;
+                        const dragForceY = (b.vy / speed) * dragMagnitude;
+                        const dragAx = dragForceX / b.mass;
+                        const dragAy = dragForceY / b.mass;
+                        b.vx += dragAx * dt;
+                        b.vy += dragAy * dt;
+                    }
+                    b.x += b.vx * dt;
+                    b.y += b.vy * dt;
+                }
+            });
+            handleCollisions();
+            const half = tug.height/2;
+            if (tug.x > canvas.width + half) tug.x = -half;
+            if (tug.x < -half) tug.x = canvas.width + half;
+            if (tug.y > canvas.height + half) tug.y = -half;
+            if (tug.y < -half) tug.y = canvas.height + half;
+        }
+
+        function getColorForDrag(drag) {
+            const minDrag = 0.05;
+            const maxDrag = 0.8;
+            const t = (drag - minDrag) / (maxDrag - minDrag);
+
+            const startColor = { r: 156, g: 163, b: 175 }; // gray-400
+            const endColor = { r: 239, g: 68, b: 68 };   // red-500
+
+            const r = Math.round(startColor.r + t * (endColor.r - startColor.r));
+            const g = Math.round(startColor.g + t * (endColor.g - startColor.g));
+            const b = Math.round(startColor.b + t * (endColor.b - startColor.b));
+
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function canActivateMoor(part, bollardIdx) {
+  if (!pier || !pier.bollards || !pier.bollards[bollardIdx]) return false;
+  const bollard = pier.bollards[bollardIdx];
+  const mp = getTugMooringPoint(part);
+  const dist = Math.hypot(mp.x - bollard.x, mp.y - bollard.y);
+  const speed = Math.hypot(tug.vx, tug.vy);
+  return (dist <= MOOR.activationRadius) && (speed <= MOOR.maxApproachSpeed);
+}
+function toggleIndividualMoor(part, idx) {
+  if (mooringLines[part][idx]) {
+    mooringLines[part][idx] = false;
+    updateMooringStatus();
+    return;
+  }
+  if (canActivateMoor(part, idx)) {
+    mooringLines[part][idx] = true;
+    updateMooringStatus();
+  }
+}
+function updateMooringStatus() {
+  ['bow','stern'].forEach((part) => {
+    for (let i=0;i<2;i++){
+      const btn = document.getElementById(part==='bow' ? ('moor-bow-'+i) : ('moor-stern-'+i));
+      if (!btn) continue;
+      const active = mooringLines[part][i];
+      const canAct = canActivateMoor(part, i);
+      btn.disabled = active ? false : !canAct;
+      const label = (part==='bow' ? 'Proa' : 'Popa') + ' C' + (i+1);
+      btn.textContent = active ? ('Largar ' + label) : label;
+      btn.classList.toggle('btn-green', !active);
+      btn.classList.toggle('btn-orange', active);
+    }
+  });
+}
+function drawMooringLines(ctx) {
+  if (MOOR.showZones && pier && pier.bollards) {
+    ctx.save();
+    ctx.setLineDash([6,4]);
+    ctx.strokeStyle = 'rgba(0,255,0,0.35)';
+    ctx.lineWidth = 1.5;
+    pier.bollards.forEach(b => {
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, MOOR.activationRadius, 0, Math.PI*2);
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+  [['bow',0],['bow',1],['stern',0],['stern',1]].forEach(([part,idx]) => {
+    if (mooringLines[part][idx] && pier && pier.bollards && pier.bollards[idx]) {
+      const mp = getTugMooringPoint(part);
+      const b  = pier.bollards[idx];
+      ctx.save();
+      ctx.strokeStyle = (part==='bow') ? '#fbbf24' : '#22d3ee';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([10,5]);
+      ctx.beginPath();
+      ctx.moveTo(mp.x, mp.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+  });
+}
+
+function draw() {
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            if (!tug.thrusters) return;
+            ctx.fillStyle = '#845422';
+            ctx.fillRect(pier.x, pier.y, pier.width, pier.height);
+            ctx.fillStyle = '#444';
+            pier.bollards.forEach(b => ctx.fillRect(b.x-5, b.y-5, 10, 10));
+            
+            // Zonas de ativação e linhas dos cabos individuais
+            drawMooringLines(ctx);
+buoys.forEach(buoy => {
+                ctx.beginPath(); ctx.arc(buoy.x, buoy.y, buoy.radius, 0, Math.PI * 2);
+                ctx.fillStyle = buoy.color; ctx.fill();
+                ctx.strokeStyle = 'black'; ctx.lineWidth = 2; ctx.stroke();
+            });
+            if (placingBuoy){
+                ctx.save(); ctx.globalAlpha = 0.6;
+                ctx.beginPath(); ctx.arc(placingBuoy.x, placingBuoy.y, placingBuoy.radius, 0, Math.PI*2);
+                ctx.fillStyle = placingBuoy.color; ctx.fill();
+                ctx.restore();
+            }
+            blocks.forEach(b=>{
+                const halfW = b.width / 2;
+                const halfH = b.height / 2;
+                ctx.fillStyle = getColorForDrag(b.drag);
+                ctx.strokeStyle = '#111827'; ctx.lineWidth = 2;
+                ctx.fillRect(b.x - halfW, b.y - halfH, b.width, b.height);
+                ctx.strokeRect(b.x - halfW, b.y - halfH, b.width, b.height);
+                ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, Math.PI*2);
+                ctx.fillStyle = '#111827'; ctx.fill();
+            });
+            if (tow) {
+                const blk = blocks.find(bb => bb.id === tow.blockId);
+                if (blk) {
+                    const stern = getSternWorldPos();
+                    ctx.beginPath(); ctx.moveTo(stern.x, stern.y); ctx.lineTo(blk.x, blk.y);
+                    ctx.lineWidth = 3; ctx.strokeStyle = '#e5e7eb'; ctx.stroke();
+                    ctx.beginPath(); ctx.arc(stern.x, stern.y, 4, 0, Math.PI*2);
+                    ctx.fillStyle = '#e5e7eb'; ctx.fill();
+                }
+            }
+            ctx.save();
+            ctx.translate(tug.x, tug.y); ctx.rotate(tug.angle);
+            const w = tug.width, h = tug.height, bowRadius = w/2;
+            ctx.fillStyle = '#60a5fa'; ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-w/2, h/2); ctx.lineTo( w/2, h/2);
+            ctx.lineTo( w/2, -h/2 + bowRadius);
+            ctx.quadraticCurveTo( w/2, -h/2, w/2 - bowRadius, -h/2);
+            ctx.lineTo(-w/2 + bowRadius, -h/2);
+            ctx.quadraticCurveTo(-w/2, -h/2, -w/2, -h/2 + bowRadius);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, -h/2); ctx.lineTo(0, h/2);
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 1;
+            ctx.setLineDash([5,5]); ctx.stroke(); ctx.setLineDash([]);
+            tug.thrusters.forEach(th => {
+                ctx.save(); ctx.translate(th.x, th.y);
+                drawThrusterVisuals(ctx, th.currentJetAngle, th.currentPower);
+                ctx.restore();
+            });
+            ctx.restore();
+            const pixelSpeed = Math.hypot(tug.vx, tug.vy);
+            const knotSpeed = pixelSpeed * 0.004;
+            speedDisplay.textContent = knotSpeed.toFixed(1);
+        }
+
+        function drawThrusterVisuals(context, jetAngle, power) {
+            context.save(); context.rotate(jetAngle);
+            context.fillStyle = '#facc15';
+            context.beginPath();
+            context.moveTo(0, -8); context.lineTo(8, -4); context.lineTo(5, 5);
+            context.lineTo(-5, 5); context.lineTo(-8, -4);
+            context.closePath(); context.fill();
+            if (power > 0) {
+                const jetLength = 10 + power * 0.3; const jetWidth  = 5  + power * 0.1;
+                context.beginPath(); context.moveTo(0, 5);
+                context.lineTo(-jetWidth, 5 + jetLength);
+                context.lineTo( jetWidth, 5 + jetLength);
+                context.closePath(); context.fillStyle = 'rgba(250, 204, 21, 0.7)'; context.fill();
+            }
+            context.restore();
+        }
+
+        function getTugCorners() {
+  const w = tug.width, h = tug.height;
+  const c = Math.cos(tug.angle), s = Math.sin(tug.angle);
+  const ptsLocal = [
+    {x:-w/2, y:-h/2}, {x:+w/2, y:-h/2},
+    {x:+w/2, y:+h/2}, {x:-w/2, y:+h/2}
+  ];
+  return ptsLocal.map(p => ({
+    x: tug.x + (p.x * c - p.y * s),
+    y: tug.y + (p.x * s + p.y * c)
+  }));
+}
+function getPierCorners() {
+  return [
+    {x:pier.x,             y:pier.y},
+    {x:pier.x + pier.width,y:pier.y},
+    {x:pier.x + pier.width,y:pier.y + pier.height},
+    {x:pier.x,             y:pier.y + pier.height}
+  ];
+}
+function projectOnAxis(points, ax) {
+  let min = Infinity, max = -Infinity;
+  for (const p of points) {
+    const d = p.x * ax.x + p.y * ax.y;
+    if (d < min) min = d;
+    if (d > max) max = d;
+  }
+  return {min, max};
+}
+function normVec(v) {
+  const m = Math.hypot(v.x, v.y) || 1e-12;
+  return {x: v.x / m, y: v.y / m};
+}
+function normXY(x, y) {
+  const m = Math.hypot(x, y) || 1e-12;
+  return {x: x / m, y: y / m};
+}
+function closestPointOnSegment(Ax, Ay, Bx, By, Px, Py) {
+  const ABx = Bx - Ax, ABy = By - Ay;
+  const APx = Px - Ax, APy = Py - Ay;
+  const AB2 = ABx*ABx + ABy*ABy || 1e-12;
+  let t = (APx*ABx + APy*ABy) / AB2;
+  t = Math.max(0, Math.min(1, t));
+  return { x: Ax + ABx*t, y: Ay + ABy*t, t };
+}
+function handleCollisions() {
+  if (!tug) return;
+
+  // (A) Colisão com o CAIS (SAT)
+  if (pier) {
+    const tugPts = getTugCorners();
+    const pierPts = getPierCorners();
+    const tugCenter  = { x: tug.x, y: tug.y };
+    const pierCenter = { x: pier.x + pier.width * 0.5, y: pier.y + pier.height * 0.5 };
+    const c = Math.cos(tug.angle), s = Math.sin(tug.angle);
+    const tugAx = { x:  c, y:  s };
+    const tugAy = { x: -s, y:  c };
+    const axes  = [ tugAx, tugAy, {x:1,y:0}, {x:0,y:1} ];
+
+    let minOverlap = Infinity, bestAxis = null;
+    for (const a of axes) {
+      const axis = normVec(a);
+      const A = projectOnAxis(tugPts, axis);
+      const B = projectOnAxis(pierPts, axis);
+      const overlap = Math.min(A.max, B.max) - Math.max(A.min, B.min);
+      if (overlap <= 0) { bestAxis = null; break; }
+      if (overlap < minOverlap) { minOverlap = overlap; bestAxis = axis; }
+    }
+    if (bestAxis) {
+      const centerDelta = { x: tugCenter.x - pierCenter.x, y: tugCenter.y - pierCenter.y };
+      if (bestAxis.x * centerDelta.x + bestAxis.y * centerDelta.y < 0) bestAxis = { x: -bestAxis.x, y: -bestAxis.y };
+      const mtv = { x: bestAxis.x * minOverlap, y: bestAxis.y * minOverlap };
+      tug.x += mtv.x; tug.y += mtv.y;
+
+      const RESTITUTION = 0.0, FRICTION = 0.15;
+      const n = normVec(bestAxis);
+      const t = { x: -n.y, y: n.x };
+      const vn = tug.vx * n.x + tug.vy * n.y;
+      const vt = tug.vx * t.x + tug.vy * t.y;
+      const vn_new = (vn < 0) ? (-RESTITUTION * vn) : vn;
+      const vt_new = vt * (1 - FRICTION);
+      tug.vx = n.x * vn_new + t.x * vt_new;
+      tug.vy = n.y * vn_new + t.y * vt_new;
+      tug.va *= 0.75;
+    }
+  }
+
+  // (B) Colisões com BÓIAS (círculo vs casco)
+  if (!Array.isArray(buoys) || buoys.length === 0) return;
+
+  const corners = getTugCorners();
+  const edges = [
+    [corners[0], corners[1]],
+    [corners[1], corners[2]],
+    [corners[2], corners[3]],
+    [corners[3], corners[0]],
+  ];
+  function tugContactVelocity(px, py) {
+    const rx = px - tug.x, ry = py - tug.y;
+    const vx = tug.vx + (-tug.va * ry);
+    const vy = tug.vy + ( tug.va * rx);
+    return {vx, vy, rx, ry};
+  }
+  const REST_B = 0.05, MU_B = 0.15;
+
+  for (const buoy of buoys) {
+    if (!buoy || buoy === selectedBuoy) continue;
+    const R = buoy.radius || 15;
+
+    let best = null;
+    for (const [A, B] of edges) {
+      const cp = closestPointOnSegment(A.x, A.y, B.x, B.y, buoy.x, buoy.y);
+      const dx = buoy.x - cp.x, dy = buoy.y - cp.y;
+      const d  = Math.hypot(dx, dy);
+      if (!best || d < best.d) best = { d, dx, dy, cx: cp.x, cy: cp.y };
+    }
+    if (!best) continue;
+
+    if (best.d < R) {
+      const n = normXY(best.dx, best.dy);
+      const pen = R - best.d + 0.1;
+      const mB = buoy.mass || 50, mT = tug.mass || 2500;
+      const total = mB + mT;
+      const moveB = (total > 0) ? (pen * (mT/total)) : pen;
+      const moveT = (total > 0) ? (pen * (mB/total)) : 0.0;
+      buoy.x += n.x * moveB; buoy.y += n.y * moveB;
+      tug.x  -= n.x * moveT; tug.y  -= n.y * moveT;
+
+      const tv = tugContactVelocity(best.cx, best.cy);
+      const vrelx = (buoy.vx - tv.vx), vrely = (buoy.vy - tv.vy);
+      const vn_rel = vrelx*n.x + vrely*n.y;
+      const t = { x: -n.y, y: n.x };
+      const vt_rel = vrelx*t.x + vrely*t.y;
+
+      let vn_rel_new = vn_rel;
+      if (vn_rel < 0) vn_rel_new = -REST_B * vn_rel;
+      const vt_rel_new = vt_rel * (1 - MU_B);
+
+      const vrelx_new = n.x*vn_rel_new + t.x*vt_rel_new;
+      const vrely_new = n.y*vn_rel_new + t.y*vt_rel_new;
+
+      const dvx_b = (tv.vx + vrelx_new) - buoy.vx;
+      const dvy_b = (tv.vy + vrely_new) - buoy.vy;
+      buoy.vx += dvx_b;
+      buoy.vy += dvy_b;
+
+      const k = Math.min(1, (mB / (mT + 1e-6))) * 0.6;
+      tug.vx -= k * dvx_b;
+      tug.vy -= k * dvy_b;
+
+      const torque = (tv.rx * (k * dvy_b)) - (tv.ry * (k * dvx_b));
+      tug.va += torque / (tug.inertia || 2e6);
+    }
+  }
+}
+let __last = performance.now(), __fps = 0;
+        function gameLoop(ts){
+            const dt = Math.min(0.05, (ts - __last)/1000);
+            __fps = 1/Math.max(1e-6, dt);
+            __last = ts;
+            update(dt);
+            draw();
+            
+            let hudText = `FPS: ${__fps.toFixed(0)} | dt: ${(dt*1000).toFixed(1)} ms | V Rebocador: ${Math.hypot(tug.vx,tug.vy).toFixed(1)} px/s`;
+            if (tow) {
+                const towedBlock = blocks.find(b => b.id === tow.blockId);
+                if (towedBlock) {
+                    const blockSpeed = Math.hypot(towedBlock.vx, towedBlock.vy);
+                    hudText += ` | V Bloco: ${blockSpeed.toFixed(1)} px/s`;
+                }
+            }
+            hud.textContent = hudText;
+
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function syncCanvasSize() {
+            const container = canvas.parentElement;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
+                
+                if (pier) {
+                    pier.x = canvas.width - 50;
+                    pier.y = canvas.height / 2 - 150;
+                    pier.bollards = [
+                        { x: canvas.width - 25, y: canvas.height / 2 - 100 },
+                        { x: canvas.width - 25, y: canvas.height / 2 + 100 }
+                    ];
+                }
+            }
+        }
+
+        (function init(){
+            const canvasContainer = canvas.parentElement;
+            const resizeObserver = new ResizeObserver(() => {
+                // FIX: Use requestAnimationFrame to avoid ResizeObserver loop error
+                window.requestAnimationFrame(() => {
+                    syncCanvasSize();
+                });
+            });
+            resizeObserver.observe(canvasContainer);
+            
+            window.resetSimulator();
+            syncCanvasSize();
+
+            updatePodSliders();
+            applyPreset('portoReativo');
+            setManeuver('Parada Normal');
+            requestAnimationFrame(gameLoop);
+        })();
+
+
+        // --- UI & PANEL INTERACTION LOGIC ---
+        const panels = document.querySelectorAll('.draggable-panel');
+        let activePanel = null;
+        let isDragging = false;
+        let isResizing = false;
+        let panelOffsetX, panelOffsetY;
+
+        panels.forEach(panel => {
+            const dragHandle = panel.querySelector('.drag-handle');
+            const resizeHandle = panel.querySelector('.resize-handle');
+
+            if (dragHandle) {
+                dragHandle.addEventListener('mousedown', (e) => {
+                    // if (e.target !== dragHandle) return; // Allow dragging from children
+                    e.preventDefault();
+                    isDragging = true; isResizing = false; activePanel = panel;
+                    panelOffsetX = e.clientX - activePanel.getBoundingClientRect().left;
+                    panelOffsetY = e.clientY - activePanel.getBoundingClientRect().top;
+                    panels.forEach(p => p.style.zIndex = '100');
+                    activePanel.style.zIndex = '101';
+                });
+            }
+
+            if (resizeHandle) {
+                resizeHandle.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    isResizing = true; isDragging = false; activePanel = panel;
+                    panelOffsetX = e.clientX;
+                    panelOffsetY = e.clientY;
+                    const initialDimensions = activePanel.getBoundingClientRect();
+                    activePanel.dataset.initialWidth = initialDimensions.width;
+                    activePanel.dataset.initialHeight = initialDimensions.height;
+                    panels.forEach(p => p.style.zIndex = '100');
+                    activePanel.style.zIndex = '101';
+                });
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!activePanel) return;
+            e.preventDefault();
+            if (isDragging) {
+                let newX = e.clientX - panelOffsetX;
+                let newY = e.clientY - panelOffsetY;
+                const viewportWidth = document.documentElement.clientWidth;
+                const viewportHeight = document.documentElement.clientHeight;
+                newX = Math.max(0, Math.min(newX, viewportWidth - activePanel.offsetWidth));
+                newY = Math.max(0, Math.min(newY, viewportHeight - activePanel.offsetHeight));
+                activePanel.style.left = `${newX}px`;
+                activePanel.style.top = `${newY}px`;
+            } else if (isResizing) {
+                const dx = e.clientX - panelOffsetX;
+                const dy = e.clientY - panelOffsetY;
+                const initialWidth = parseFloat(activePanel.dataset.initialWidth);
+                const initialHeight = parseFloat(activePanel.dataset.initialHeight);
+                const newWidth = Math.max(280, initialWidth + dx);
+                const newHeight = Math.max(120, initialHeight + dy);
+                activePanel.style.width = `${newWidth}px`;
+                activePanel.style.height = `${newHeight}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false; isResizing = false; activePanel = null;
+        });
+// === Listeners dos botões de cabos individuais ===
+(function(){
+  const btns = [
+    ['moor-bow-0','bow',0],
+    ['moor-bow-1','bow',1],
+    ['moor-stern-0','stern',0],
+    ['moor-stern-1','stern',1],
+  ];
+  btns.forEach(([id,part,idx]) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', () => toggleIndividualMoor(part, idx));
+  });
+  updateMooringStatus();
+})();
+
+// === Painéis: ocultar na inicialização e barra lateral para abrir =========
+(function(){
+  const panels = Array.from(document.querySelectorAll('.card.draggable-panel'));
+  if (!panels.length) return;
+
+  let highestZ = 3000;
+  function titleOf(panel){
+    const h = panel.querySelector('h2,h3');
+    return (h && (h.textContent||'').trim()) || panel.getAttribute('data-title') || 'Painel';
+  }
+  function ensureId(panel, idx){
+    if (!panel.id) {
+      const raw = titleOf(panel).toLowerCase().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'');
+      panel.id = raw ? ('panel-' + raw) : ('panel-' + idx);
+    }
+    return panel.id;
+  }
+  panels.forEach((p,i)=>{
+    ensureId(p,i);
+    p.classList.add('panel-hidden'); // oculto por padrão
+    if (!p.querySelector('.panel-close')) {
+      const x = document.createElement('button');
+      x.className = 'panel-close';
+      x.title = 'Fechar painel';
+      x.textContent = '×';
+      x.addEventListener('click', ()=> p.classList.add('panel-hidden'));
+      p.appendChild(x);
+    }
+    const dragHandle = p.querySelector('.drag-handle') || p;
+    dragHandle.addEventListener('mousedown', ()=> { p.style.zIndex = (++highestZ).toString(); });
+  });
+
+  const sb = document.createElement('div');
+  sb.id = 'panel-sidebar';
+  sb.className = 'panel-sidebar';
+  const title = document.createElement('h3');
+  title.textContent = 'Painéis';
+  sb.appendChild(title);
+
+  panels.forEach((p)=>{
+    const btn = document.createElement('button');
+    btn.className = 'sidebar-btn';
+    btn.textContent = titleOf(p);
+    btn.setAttribute('aria-controls', p.id);
+    btn.addEventListener('click', ()=>{
+      p.classList.remove('panel-hidden');
+      p.style.zIndex = '3001';
+      // Reposiciona para não ficar sob a barra lateral (agora à direita)
+      const sbRect = sb.getBoundingClientRect();
+      const pad = 16;
+      requestAnimationFrame(()=>{
+        const rect = p.getBoundingClientRect();
+        const maxRight = window.innerWidth - sbRect.width - pad;
+        if (rect.right > maxRight) {
+          const newLeft = Math.max(8, maxRight - rect.width);
+          p.style.left = newLeft + 'px';
+        }
+        if (rect.top < 8) p.style.top = '8px';
+      });
+    });
+    sb.appendChild(btn);
+  });
+
+  const hideAll = document.createElement('button');
+  hideAll.className = 'sidebar-btn';
+  hideAll.textContent = 'Ocultar todos';
+  hideAll.addEventListener('click', ()=> panels.forEach(p=>p.classList.add('panel-hidden')));
+  sb.appendChild(hideAll);
+
+  document.body.appendChild(sb);
+})(); // =========================================================================
+
+    });
+  </script>
+</body>
+</html>
