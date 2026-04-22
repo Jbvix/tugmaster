@@ -33,6 +33,41 @@
         </div>
     </header>
 
+    <!-- Filters & Search -->
+    <section class="filters-section">
+        <div class="search-bar border-glass">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="appFilterInput" placeholder="Buscar simulador, ferramenta ou palavra-chave...">
+        </div>
+        
+        <div class="filter-tabs">
+            <button class="filter-btn active" data-filter="all" title="Todos">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                Todos
+            </button>
+            <button class="filter-btn" data-filter="manobra" title="Manobra">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2ZM8.5 15.5L12 11.5L15.5 15.5Z"></path></svg>
+                Manobra
+            </button>
+            <button class="filter-btn" data-filter="equipamento" title="Equipamentos">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                Equipamentos
+            </button>
+            <button class="filter-btn" data-filter="navegacao" title="Navegação">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                Navegação
+            </button>
+            <button class="filter-btn" data-filter="gestao" title="Gestão & SSMA">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Gestão & SSMA
+            </button>
+            <button class="filter-btn" data-filter="entretenimento" title="Entretenimento">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                Entretenimento
+            </button>
+        </div>
+    </section>
+
     <main>
         <!-- Internal Local Simulators (Cyan Theme) -->
         <a href="./simuladores/simulador-de-manobras-v1.html" class="nav-card">
@@ -220,5 +255,123 @@
         </div>
         <p>&copy; 2025 TugLife Lab | Feito por Jossian Brito.</p>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Efeito Typewriter
+            const subtitle = document.querySelector('.header-text p');
+            const fullText = subtitle.textContent;
+            subtitle.textContent = '';
+            
+            // Estilos do cursor animado
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .typewriter-cursor { animation: blink 1s step-end infinite; }
+                @keyframes blink { 50% { opacity: 0; } }
+            `;
+            document.head.appendChild(style);
+
+            let i = 0;
+            function type() {
+                if (i < fullText.length) {
+                    subtitle.textContent += fullText.charAt(i);
+                    i++;
+                    setTimeout(type, 40); // Velocidade da digitação
+                } else {
+                    // Adiciona o cursor piscante no fim
+                    subtitle.innerHTML += '<span class="typewriter-cursor" style="color: var(--accent-cyan); font-weight: bold;">_</span>';
+                }
+            }
+            setTimeout(type, 600); // Aguarda a tela carregar um pouco antes de digitar
+
+            // 2. Easter Egg do Logo (Admin Acesso Invisível)
+            let logoClicks = 0;
+            const logo = document.querySelector('.logo-container img');
+            let clickTimer;
+
+            logo.addEventListener('click', () => {
+                logoClicks++;
+                
+                // Se der 3 cliques rápidos
+                if (logoClicks === 3) {
+                    // Flash visual feedback
+                    logo.style.filter = 'drop-shadow(0 0 20px #00ccff) brightness(1.5)';
+                    setTimeout(() => {
+                        window.location.href = './admin_dashboard.html';
+                    }, 400); // Aguarda um instante para a transição
+                }
+                
+                // Reseta a contagem após 1 segundo se não receber cliques
+                clearTimeout(clickTimer);
+                clickTimer = setTimeout(() => {
+                    logoClicks = 0;
+                }, 1000);
+            });
+
+            // 3. Sistema de Filtros Inteligente
+            const searchInput = document.getElementById('appFilterInput');
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const cards = document.querySelectorAll('.nav-card');
+            
+            const categoryMap = {
+                "ASD TUG SIM V1": "manobra",
+                "ASD TUG SIM V2": "manobra",
+                "ASD TUG SIM V3": "manobra",
+                "ASD TUG SIM V4": "manobra",
+                "TUG BOAT SIM": "manobra",
+                "ASD TUG SIM 3D": "manobra",
+                "3DXTR SIM": "manobra",
+                "TUG TW SIM": "equipamento",
+                "WINCH SIM": "equipamento",
+                "WINCH TUG SIM": "equipamento",
+                "TD MAQ SIM": "equipamento",
+                "OWS SIM": "equipamento",
+                "TUGLIFECDIS": "navegacao",
+                "COSTAL NAV BR": "navegacao",
+                "CALC VIAGEM": "navegacao",
+                "NAV WATCH": "navegacao",
+                "PGR DIGITAL": "gestao",
+                "SPARE PARTS TRACKER": "gestao",
+                "SPARES CHAIN MERKLE": "gestao",
+                "TUGLIFE FM MOBILE": "gestao",
+                "RADIO TUGLIFE FM": "entretenimento",
+                "TUGLORDS": "entretenimento"
+            };
+
+            function filterApps() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const activeCategory = document.querySelector('.filter-btn.active').dataset.filter;
+
+                cards.forEach(card => {
+                    const titleEl = card.querySelector('.card-title');
+                    const subtitleEl = card.querySelector('.card-subtitle');
+                    const title = titleEl ? titleEl.textContent.trim() : '';
+                    const subtitle = subtitleEl ? subtitleEl.textContent.trim() : '';
+                    
+                    const cardCategory = categoryMap[title] || 'all';
+
+                    const matchesSearch = title.toLowerCase().includes(searchTerm) || subtitle.toLowerCase().includes(searchTerm);
+                    const matchesCategory = activeCategory === 'all' || cardCategory === activeCategory;
+
+                    if (matchesSearch && matchesCategory) {
+                        card.classList.remove('hidden-card');
+                    } else {
+                        card.classList.add('hidden-card');
+                    }
+                });
+            }
+
+            searchInput.addEventListener('input', filterApps);
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Update active state
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    filterApps();
+                });
+            });
+        });
+    </script>
 </body>
 </html>

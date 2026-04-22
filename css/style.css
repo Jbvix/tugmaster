@@ -105,12 +105,114 @@ header {
   letter-spacing: 0.5px;
 }
 
+/* FILTERS & SEARCH */
+/* ------------------------------------- */
+.filters-section {
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeInDown 0.8s ease forwards;
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(16, 25, 36, 0.6);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 0.8rem 1.2rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+.search-bar:focus-within {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(0, 204, 255, 0.2);
+}
+
+.search-icon {
+  color: var(--text-muted);
+  margin-right: 1rem;
+}
+
+.search-bar input {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  width: 100%;
+  outline: none;
+}
+
+.search-bar input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  justify-content: center;
+}
+
+.filter-btn {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  padding: 0.6rem 1.2rem;
+  border-radius: 20px;
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.filter-btn svg {
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-cyan);
+  color: var(--text-main);
+  transform: translateY(-2px);
+}
+
+.filter-btn.active {
+  background: rgba(0, 204, 255, 0.15);
+  border-color: var(--accent-cyan);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(0, 204, 255, 0.2);
+}
+
+.filter-btn.active svg {
+  color: var(--accent-cyan);
+}
+
+/* Add a global hidden class for the JS filtering */
+.hidden-card {
+  display: none !important;
+}
+
 /* HUB GRID */
 /* ------------------------------------- */
 main {
   width: 100%;
   max-width: 1200px;
-  padding: 2rem;
+  padding: 1rem 2rem 2rem; /* Adjusted top padding */
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
