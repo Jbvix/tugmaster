@@ -140,6 +140,7 @@
     .program-details h3 { margin: 0; font-size: 1.05em; color: #fff; font-weight: 700; }
     .program-item.on-air { background-color: rgba(41, 199, 216, 0.16); border-left: 4px solid #29c7d8; padding-left: 6px; font-weight: 800; }
     .version-badge { font-size: 12px; opacity: 0.85; margin-top: 6px; }
+    .live-datetime { font-family: 'Orbitron', sans-serif; font-size: 14px; color: #b2ecff; margin-top: 8px; letter-spacing: 1px; text-transform: capitalize; }
   </style>
 </head>
 <body>
@@ -161,6 +162,7 @@
           <div class="radio-branding">
             <h1>TugLife FM</h1>
             <div class="version-badge">GOC v3.3 • Gerado 19/10/2025 19:01 • Autor: Jossian Brito</div>
+            <div id="live-datetime" class="live-datetime"></div>
           </div>
           <div class="radio-controls">
             <div id="live-indicator" class="live-indicator">
@@ -281,16 +283,16 @@
       const weeklySchedule = {
         domingo: [
           { startHour: 0, endHour: 1, title: "Viajando na Emoção" },
-          { startHour: 1, endHour: 3, title: "Top Classic" },
-          { startHour: 3, endHour: 8, title: "Coração Sertanejo FDS" },
+          { startHour: 1, endHour: 3, title: "Coração Sertanejo FDS" },
+          { startHour: 3, endHour: 8, title: "Top Classic" },
           { startHour: 8, endHour: 10, title: "Algazarra" },
           { startHour: 10, endHour: 11, title: "TugKids" },
-          { startHour: 11, endHour: 14, title: "Flash Dance" },
-          { startHour: 14, endHour: 16, title: "Flash Back Top Hits" },
-          { startHour: 16, endHour: 18, title: "Convés Brasil - Domingo" },
-          { startHour: 18, endHour: 19, title: "As Quentes do Rock (Nacional e Internacional)" },
-          { startHour: 19, endHour: 20, title: "O Melhor do Soul" },
-          { startHour: 20, endHour: 22, title: "Forró de Bordo" },
+          { startHour: 11, endHour: 14, title: "TugCast Cmte Valdir" },
+          { startHour: 14, endHour: 15, title: "Flash Back Top Hits" },
+          { startHour: 15, endHour: 19, title: "Encontro de Gigantes - Djavan e Belchior" },
+          { startHour: 19, endHour: 20, title: "Poder Pentecostal e Hinos de Testemunho (Gospel Hits)" },
+          { startHour: 20, endHour: 21, title: "Love Songs Are Back Again" },
+          { startHour: 21, endHour: 22, title: "Top Hits 2000" },
           { startHour: 22, endHour: 23, title: "Top Hits 90s" },
           { startHour: 23, endHour: 24, title: "Clube do Rei DOM" }
         ],
@@ -301,23 +303,23 @@
           { startHour: 12, endHour: 16, title: "Show da Tarde" },
           { startHour: 16, endHour: 17, title: "A Vibe do Reggae" },
           { startHour: 17, endHour: 18, title: "Back in Time" },
-          { startHour: 18, endHour: 19, title: "TUGLIFE RETRO" },
+          { startHour: 18, endHour: 19, title: "TugLife Retrô" },
           { startHour: 19, endHour: 20, title: "Fita K7" },
           { startHour: 20, endHour: 21, title: "Top Hits 90s" },
           { startHour: 21, endHour: 22, title: "O Melhor do Soul" },
           { startHour: 22, endHour: 23, title: "Hits Eletrônicos" },
-          { startHour: 23, endHour: 24, title: "A Hora do Rei (Roberto Carlos) SEG SAB" }
+          { startHour: 23, endHour: 24, title: "Roberto Carlos : A Hora do Rei" }
         ],
         terca: [
-          { startHour: 0, endHour: 2, title: "Love Night - Segunda a Sexta" },
+          { startHour: 0, endHour: 2, title: "Love Night" },
           { startHour: 2, endHour: 6, title: "Insônia" },
           { startHour: 6, endHour: 12, title: "Acorda Marujo ! Adrenalina" },
           { startHour: 12, endHour: 16, title: "Mix Gospel" },
-          { startHour: 16, endHour: 17, title: "Forro de Bordo" },
+          { startHour: 16, endHour: 17, title: "Fita K7" },
           { startHour: 17, endHour: 19, title: "O Melhor do Soul" },
-          { startHour: 19, endHour: 20, title: "Hora do Marinheiro" },
-          { startHour: 20, endHour: 23, title: "Semeando a Palavra" },
-          { startHour: 23, endHour: 24, title: "A Hora do Rei (Roberto Carlos) SEG SAB" }
+          { startHour: 19, endHour: 21, title: "Hora do Marinheiro" },
+          { startHour: 21, endHour: 23, title: "Semeando a Palavra" },
+          { startHour: 23, endHour: 24, title: "Love Songs Are Back Again" }
         ],
         quarta: [
           { startHour: 0, endHour: 6, title: "Âncora da Fé" },
@@ -325,47 +327,43 @@
           { startHour: 12, endHour: 16, title: "Show da Tarde" },
           { startHour: 16, endHour: 17, title: "Galpão Farrapo" },
           { startHour: 17, endHour: 18, title: "Os Melhores Remixes" },
-          { startHour: 18, endHour: 20, title: "O Melhor do Rock Nacional (Barão Vermelho, Kid Abelha)" },
-          { startHour: 20, endHour: 22, title: "Convés Brasil _Semana" },
-          { startHour: 22, endHour: 23, title: "Gospel Night" },
-          { startHour: 23, endHour: 24, title: "A Hora do Rei (Roberto Carlos) SEG SAB" }
+          { startHour: 18, endHour: 20, title: "A Batalha dos Titãs (Rock & Grunge Anos 80/90)" },
+          { startHour: 20, endHour: 22, title: "Clube do Brega - Especial Amado Batista" },
+          { startHour: 22, endHour: 24, title: "Love Night" }
         ],
         quinta: [
-          { startHour: 0, endHour: 6, title: "Âncora da Fé" },
+          { startHour: 0, endHour: 2, title: "Insônia" },
+          { startHour: 2, endHour: 6, title: "Âncora da Fé" },
           { startHour: 6, endHour: 12, title: "Convés Brasil _Semana" },
           { startHour: 12, endHour: 16, title: "Show da Tarde" },
           { startHour: 16, endHour: 17, title: "Axé e Pagode" },
           { startHour: 17, endHour: 19, title: "Top Hits 90s" },
-          { startHour: 19, endHour: 20, title: "Clube do Brega - Especial" },
+          { startHour: 19, endHour: 20, title: "Garagem do Rock" },
           { startHour: 20, endHour: 23, title: "Back in Time" },
-          { startHour: 23, endHour: 24, title: "A Hora do Rei (Roberto Carlos) SEG SAB" }
+          { startHour: 23, endHour: 24, title: "Roberto Carlos : A Hora do Rei" }
         ],
         sexta: [
-          { startHour: 0, endHour: 2, title: "Love Night - Segunda a Sexta" },
+          { startHour: 0, endHour: 2, title: "Love Night" },
           { startHour: 2, endHour: 4, title: "Insônia" },
-          { startHour: 4, endHour: 6, title: "Âncora da Fé" },
+          { startHour: 4, endHour: 6, title: "Nas ondas do louvor" },
           { startHour: 6, endHour: 12, title: "Acorda Marujo ! Adrenalina" },
-          { startHour: 12, endHour: 15, title: "Show da Tarde" },
-          { startHour: 15, endHour: 19, title: "Top Hits 80s" },
-          { startHour: 19, endHour: 20, title: "Hora do Marinheiro" },
-          { startHour: 20, endHour: 21, title: "Os Melhores Remixes" },
-          { startHour: 21, endHour: 23, title: "Back in Time" },
-          { startHour: 23, endHour: 24, title: "A Hora do Rei (Roberto Carlos) SEG SAB" }
+          { startHour: 12, endHour: 17, title: "Show da Tarde" },
+          { startHour: 17, endHour: 19, title: "Groove & Disco Fever (Anos 70 & 80)" },
+          { startHour: 19, endHour: 21, title: "A Vibe do Reggae" },
+          { startHour: 21, endHour: 24, title: "Back in Time" }
         ],
         sabado: [
           { startHour: 0, endHour: 4, title: "Top Classic" },
           { startHour: 4, endHour: 8, title: "Mais Brasil Fins de Semana" },
           { startHour: 8, endHour: 9, title: "Flash Back Top Hits" },
-          { startHour: 9, endHour: 10, title: "Bora Viajar" },
-          { startHour: 10, endHour: 12, title: "Melhores do Samba e Pagode 90 (Populares)" },
-          { startHour: 12, endHour: 14, title: "Forro de Bordo" },
-          { startHour: 14, endHour: 15, title: "Nação Gaúcha" },
-          { startHour: 15, endHour: 16, title: "TUGLIFE GYM" },
-          { startHour: 16, endHour: 18, title: "Flash Dance" },
-          { startHour: 18, endHour: 19, title: "O Melhor do Soul" },
-          { startHour: 19, endHour: 21, title: "Vibe Total" },
-          { startHour: 21, endHour: 23, title: "Clube do Brega - Especial" },
-          { startHour: 23, endHour: 24, title: "A Hora do Rei (Roberto Carlos) SEG SAB" }
+          { startHour: 9, endHour: 12, title: "Bora Viajar" },
+          { startHour: 12, endHour: 13, title: "Café com Samba" },
+          { startHour: 13, endHour: 15, title: "Revirando o baú" },
+          { startHour: 15, endHour: 18, title: "Encontro de Gigantes Legiao Urbana e Titãs" },
+          { startHour: 18, endHour: 19, title: "Arriba!!!" },
+          { startHour: 19, endHour: 21, title: "Fim de semana Convés Brasil" },
+          { startHour: 21, endHour: 22, title: "Clube do Brega Seleção" },
+          { startHour: 22, endHour: 24, title: "Back in Time" }
         ]
       };
 
@@ -379,6 +377,17 @@
       const now = new Date();
       const todayIndex = now.getDay();
       let selectedDayIndex = todayIndex;
+
+      const liveDatetimeElement = document.getElementById('live-datetime');
+      function updateLiveDatetime() {
+        const d = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        if (liveDatetimeElement) {
+          liveDatetimeElement.textContent = d.toLocaleDateString('pt-BR', options);
+        }
+      }
+      updateLiveDatetime();
+      setInterval(updateLiveDatetime, 1000);
 
       function renderSchedule(dayIndex) {
         programListElement.innerHTML = '';
