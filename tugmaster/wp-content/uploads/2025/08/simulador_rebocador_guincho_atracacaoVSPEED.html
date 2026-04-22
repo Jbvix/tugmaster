@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Manobra com Guincho de Proa</title>
+    <!-- Tailwind CSS para estilização rápida -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonte do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+	<!--
+  © 2025 - Direitos Autorais Reservados. Desenvolvido por Jossian Costa de Brito.
+Este simulador é propriedade intelectual protegida por lei. A cópia, distribuição ou modificação sem autorização expressa é proibida.
+-->
+
+    <style>
+        /* Estilos globais para garantir que a aplicação ocupe toda a tela */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Evita barras de rolagem */
+            font-family: 'Roboto', sans-serif;
+            background-color: #111827; /* Fundo escuro */
+        }
+        /* Estilização base do canvas da simulação */
+        canvas {
+            background-color: #1f2937;
+            border-radius: 0.5rem;
+            border: 1px solid #4b5563;
+            cursor: default;
+            display: block;
+        }
+        /* Estilização do painel de Controle */
+        .control-panel {
+            background-color: #374151;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            border: 1px solid #4b5563;
+        }
+        /* Estilos base para os botões */
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border-width: 2px;
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        /* Variações de cor para os botões */
+        .btn-blue { background-color: #3b82f6; border-color: #1d4ed8; color: white; }
+        .btn-blue:hover:not(:disabled) { background-color: #2563eb; }
+        .btn-red { background-color: #ef4444; border-color: #b91c1c; color: white; }
+        .btn-red:hover:not(:disabled) { background-color: #dc2626; }
+        .btn-orange { background-color: #f97316; border-color: #c2410c; color: white; }
+        .btn-orange:hover:not(:disabled) { background-color: #ea580c; }
+        .btn-green { background-color: #22c55e; border-color: #15803d; color: white; }
+        .btn-green:hover:not(:disabled) { background-color: #16a34a; }
+        .slider-label { color: #d1d5db; }
+        /* Estilização customizada para os sliders (barras de input) */
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 8px;
+            background: #4b5563; border-radius: 5px;
+            outline: none; opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 20px; height: 20px;
+            background: #3b82f6; cursor: pointer;
+            border-radius: 50%; border: 2px solid #1e3a8a;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px; height: 20px;
+            background: #3b82f6; cursor: pointer;
+            border-radius: 50%; border: 2px solid #1e3a8a;
+        }
+    </style>
+</head>
+
+
+
+<body>
+
+    <!-- Estrutura principal da página com 2 colunas: Canvas e Painel de Controle -->
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_384px] h-full p-4 gap-4">
+        
+        <!-- Container para o Canvas da simulação -->
+        <div id="canvas-container" class="flex items-center justify-center min-h-0 min-w-0">
+            <canvas id="simCanvas"></canvas>
+			<footer style="text-align:center; margin-top:20px; font-size:14px; color:#666; writing-mode: vertical-rl; transform: rotate(180deg);">
+  © 2025 - Direitos Autorais Reservados<br>
+  Desenvolvido por <strong>Jossian Costa de Brito</strong>
+</footer>
+        </div>
+
+        <!-- Painel de Controle -->
+        <div class="control-panel text-white overflow-y-auto">
+            <h1 class="text-2xl font-bold mb-2 text-center">Painel de Controle</h1>
+            
+            <div class="text-center mb-4 p-2 bg-black/20 rounded-lg">
+                <h2 class="text-lg font-semibold text-gray-300">Velocidade</h2>
+                <p class="text-3xl font-mono text-cyan-400"><span id="speed-display">0.0</span> nós</p>
+            </div>
+
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold mb-2 text-center">Simulação</h2>
+                 <div class="flex space-x-2 mt-2">
+                     <button onclick="resetSimulator()" class="btn btn-orange w-full py-2 px-4 rounded-lg">Resetar Simulação</button>
+                </div>
+            </div>
+            
+            <!-- CONTROLE DO GUINCHO -->
+            <div class="mb-4 p-4 bg-gray-800 rounded-lg">
+                <h2 class="text-lg font-semibold mb-2 text-center">Guincho de Proa</h2>
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <button id="winch-connect-btn" class="btn btn-green w-full py-2 px-4 rounded-lg">Conectar</button>
+                    <button id="winch-disconnect-btn" class="btn btn-red w-full py-2 px-4 rounded-lg" disabled>Largar</button>
+                </div>
+                <div>
+                    <label for="winch_power" class="slider-label">Força do Guincho: <span id="winch_power_val">0</span>%</label>
+                    <input type="range" id="winch_power" min="0" max="100" value="0" class="w-full" disabled>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold mb-2 text-center">Atracação</h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="moor-bow-btn" class="btn btn-green w-full py-2 px-4 rounded-lg" disabled>Atracar Proa</button>
+                    <button id="moor-stern-btn" class="btn btn-green w-full py-2 px-4 rounded-lg" disabled>Atracar Popa</button>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="text-lg font-semibold mb-2 text-center">Controle Manual dos Propulsores</h2>
+                <div class="mb-4 p-4 bg-gray-800 rounded-lg">
+                    <h3 class="font-medium mb-2 text-center">Propulsor Boreste (Direito)</h3>
+                    <div>
+                        <label for="p1_angle" class="slider-label">Ângulo do Jato: <span id="p1_angle_val">0</span>°</label>
+                        <input type="range" id="p1_angle" min="-180" max="180" value="0" class="w-full">
+                    </div>
+                    <div>
+                        <label for="p1_power" class="slider-label">Potência: <span id="p1_power_val">0</span>%</label>
+                        <input type="range" id="p1_power" min="0" max="100" value="0" class="w-full">
+                    </div>
+                </div>
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <h3 class="font-medium mb-2 text-center">Propulsor Bombordo (Esquerdo)</h3>
+                    <div>
+                        <label for="p2_angle" class="slider-label">Ângulo do Jato: <span id="p2_angle_val">0</span>°</label>
+                        <input type="range" id="p2_angle" min="-180" max="180" value="0" class="w-full">
+                    </div>
+                    <div>
+                        <label for="p2_power" class="slider-label">Potência: <span id="p2_power_val">0</span>%</label>
+                        <input type="range" id="p2_power" min="0" max="100" value="0" class="w-full">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    window.addEventListener('DOMContentLoaded', () => {
+        // --- INICIALIZAÇÃO E VARIÁVEIS GLOBAIS ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const speedDisplay = document.getElementById('speed-display');
+
+        const winchConnectBtn = document.getElementById('winch-connect-btn');
+        const winchDisconnectBtn = document.getElementById('winch-disconnect-btn');
+        const winchPowerSlider = document.getElementById('winch_power');
+        const winchPowerVal = document.getElementById('winch_power_val');
+        const moorBowBtn = document.getElementById('moor-bow-btn');
+        const moorSternBtn = document.getElementById('moor-stern-btn');
+
+        let isBowMoored = false, isSternMoored = false;
+        let bowMooringBollard = null, sternMooringBollard = null;
+        let isWinchConnected = false;
+
+        const degToRad = (deg) => deg * Math.PI / 180;
+        const radToDeg = (rad) => rad * 180 / Math.PI;
+
+        // --- CLASSE DE CORPO FÍSICO ---
+        class PhysicsBody {
+            constructor(config) {
+                this.x = config.x;
+                this.y = config.y;
+                this.width = config.width;
+                this.height = config.height;
+                this.angle = config.angle || 0;
+                this.vx = config.vx || 0;
+                this.vy = config.vy || 0;
+                this.va = config.va || 0;
+                this.mass = config.mass;
+                this.inertia = config.inertia;
+                this.invMass = this.mass === 0 ? 0 : 1 / this.mass;
+                this.invInertia = this.inertia === 0 ? 0 : 1 / this.inertia;
+                this.shape = config.shape;
+                
+                if (this.shape === 'tug') {
+                    this.thrusters = config.thrusters;
+                    this.winch = config.winch;
+                } else {
+                    this.connectionPoint = config.connectionPoint;
+                }
+            }
+        }
+
+        let tug, block, pier, pierBody;
+        
+        function setupScenario() {
+            const pierHeight = canvas.height * 0.8;
+            const pierYStart = (canvas.height - pierHeight) / 2;
+            const bollardSpacing = pierHeight / 5;
+            const bollardGroupHeight = 3 * bollardSpacing;
+            const startOffsetY = (pierHeight - bollardGroupHeight) / 2;
+
+            pier = {
+                x: canvas.width - 50, y: pierYStart, width: 50, height: pierHeight,
+                bollards: [
+                    { x: canvas.width - 25, y: pierYStart + startOffsetY },
+                    { x: canvas.width - 25, y: pierYStart + startOffsetY + bollardSpacing },
+                    { x: canvas.width - 25, y: pierYStart + startOffsetY + (2 * bollardSpacing) },
+                    { x: canvas.width - 25, y: pierYStart + startOffsetY + (3 * bollardSpacing) }
+                ],
+                mooringZone: { x: canvas.width - 80, y: pierYStart, width: 30, height: pierHeight }
+            };
+            
+            pierBody = new PhysicsBody({
+                x: pier.x + pier.width / 2, y: pier.y + pier.height / 2,
+                width: pier.width, height: pier.height,
+                mass: 0, inertia: 0, shape: 'rectangle'
+            });
+        }
+
+        // --- CONTROLES MANUAIS E DA INTERFACE ---
+        const p1_angle_slider = document.getElementById('p1_angle');
+        const p1_power_slider = document.getElementById('p1_power');
+        const p2_angle_slider = document.getElementById('p2_angle');
+        const p2_power_slider = document.getElementById('p2_power');
+        const p1_angle_val = document.getElementById('p1_angle_val');
+        const p1_power_val = document.getElementById('p1_power_val');
+        const p2_angle_val = document.getElementById('p2_angle_val');
+        const p2_power_val = document.getElementById('p2_power_val');
+
+        function setupEventListeners() {
+            p1_angle_slider.addEventListener('input', (e) => { tug.thrusters[0].jetAngle = degToRad(parseFloat(e.target.value)); updateSlidersUI(); });
+            p1_power_slider.addEventListener('input', (e) => { tug.thrusters[0].power = parseFloat(e.target.value); updateSlidersUI(); });
+            p2_angle_slider.addEventListener('input', (e) => { tug.thrusters[1].jetAngle = degToRad(parseFloat(e.target.value)); updateSlidersUI(); });
+            p2_power_slider.addEventListener('input', (e) => { tug.thrusters[1].power = parseFloat(e.target.value); updateSlidersUI(); });
+            winchPowerSlider.addEventListener('input', (e) => { winchPowerVal.textContent = e.target.value; });
+            winchConnectBtn.addEventListener('click', connectWinch);
+            winchDisconnectBtn.addEventListener('click', disconnectWinch);
+            moorBowBtn.addEventListener('click', () => toggleMooring('bow'));
+            moorSternBtn.addEventListener('click', () => toggleMooring('stern'));
+        }
+        
+        function updateSlidersUI() {
+            if (!tug || !tug.thrusters) return;
+            p1_angle_slider.value = radToDeg(tug.thrusters[0].jetAngle);
+            p1_power_slider.value = tug.thrusters[0].power;
+            p2_angle_slider.value = radToDeg(tug.thrusters[1].jetAngle);
+            p2_power_slider.value = tug.thrusters[1].power;
+            p1_angle_val.textContent = Math.round(p1_angle_slider.value);
+            p1_power_val.textContent = Math.round(p1_power_slider.value);
+            p2_angle_val.textContent = Math.round(p2_angle_slider.value);
+            p2_power_val.textContent = Math.round(p2_power_slider.value);
+        }
+
+        window.resetSimulator = function() {
+            tug = new PhysicsBody({
+                x: canvas.width / 3, y: canvas.height / 2, width: 40, height: 80,
+                mass: 2500, inertia: 2000000, shape: 'tug',
+                thrusters: [{ id: 1, x: 15, y: 30, jetAngle: 0, power: 0 }, { id: 2, x: -15, y: 30, jetAngle: 0, power: 0 }],
+                winch: { x: 0, y: -40 }
+            });
+            block = new PhysicsBody({
+                x: canvas.width / 2 + 100, y: canvas.height / 2, width: 60, height: 60,
+                mass: 5000, inertia: 5000000, shape: 'rectangle',
+                connectionPoint: { x: 0, y: 0 }
+            });
+
+            isBowMoored = false; isSternMoored = false;
+            bowMooringBollard = null; sternMooringBollard = null;
+            disconnectWinch();
+            setupScenario();
+            updateMooringStatus();
+            updateWinchStatus();
+            updateSlidersUI();
+        }
+
+        // --- LÓGICA DO GUINCHO ---
+        function getGlobalCoords(body, localPoint) {
+            const cosA = Math.cos(body.angle);
+            const sinA = Math.sin(body.angle);
+            return {
+                x: body.x + (localPoint.x * cosA - localPoint.y * sinA),
+                y: body.y + (localPoint.x * sinA + localPoint.y * cosA)
+            };
+        }
+
+        function connectWinch() {
+            if (isWinchConnected) return;
+            const winchPos = getGlobalCoords(tug, tug.winch);
+            const blockConnectionPos = getGlobalCoords(block, block.connectionPoint);
+            const dist = Math.hypot(winchPos.x - blockConnectionPos.x, winchPos.y - blockConnectionPos.y);
+            if (dist < 50) { isWinchConnected = true; updateWinchStatus(); }
+        }
+
+        function disconnectWinch() {
+            isWinchConnected = false;
+            winchPowerSlider.value = 0;
+            winchPowerVal.textContent = '0';
+            updateWinchStatus();
+        }
+
+        function updateWinchStatus() {
+            if (isWinchConnected) {
+                winchConnectBtn.disabled = true;
+                winchDisconnectBtn.disabled = false;
+                winchPowerSlider.disabled = false;
+            } else {
+                const winchPos = getGlobalCoords(tug, tug.winch);
+                const blockConnectionPos = getGlobalCoords(block, block.connectionPoint);
+                const dist = Math.hypot(winchPos.x - blockConnectionPos.x, winchPos.y - blockConnectionPos.y);
+                winchConnectBtn.disabled = dist >= 50;
+                winchDisconnectBtn.disabled = true;
+                winchPowerSlider.disabled = true;
+            }
+        }
+        
+        // --- LOOP PRINCIPAL DA SIMULAÇÃO (FÍSICA) ---
+        function update() {
+            if (!tug || !block) return;
+            
+            updateMooringStatus();
+            updateWinchStatus();
+
+            let totalForceTx = 0, totalForceTy = 0, totalTorqueT = 0;
+            let totalForceBx = 0, totalForceBy = 0, totalTorqueB = 0;
+            
+            // Forças dos propulsores
+            const maxThrusterForce = 250; 
+            tug.thrusters.forEach(thruster => {
+                const globalJetAngle = tug.angle + thruster.jetAngle;
+                const forceMagnitude = thruster.power / 100 * maxThrusterForce;
+                const forceX = Math.sin(globalJetAngle) * forceMagnitude;
+                const forceY = -Math.cos(globalJetAngle) * forceMagnitude;
+                totalForceTx += forceX;
+                totalForceTy += forceY;
+                const thrusterPos = getGlobalCoords(tug, thruster);
+                const leverArmX = thrusterPos.x - tug.x;
+                const leverArmY = thrusterPos.y - tug.y;
+                totalTorqueT += leverArmX * forceY - leverArmY * forceX;
+            });
+            
+            // Força do guincho
+            if (isWinchConnected) {
+                const maxWinchForce = 50;
+                const winchPower = parseFloat(winchPowerSlider.value) / 100;
+                const winchForceMagnitude = winchPower * maxWinchForce;
+                const winchPos = getGlobalCoords(tug, tug.winch);
+                const blockConnectionPos = getGlobalCoords(block, block.connectionPoint);
+                const dx = winchPos.x - blockConnectionPos.x;
+                const dy = winchPos.y - blockConnectionPos.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0) {
+                    const dirX = dx / dist, dirY = dy / dist;
+                    totalForceBx += dirX * winchForceMagnitude;
+                    totalForceBy += dirY * winchForceMagnitude;
+                    totalForceTx -= dirX * winchForceMagnitude;
+                    totalForceTy -= dirY * winchForceMagnitude;
+                    const leverArmX = winchPos.x - tug.x;
+                    const leverArmY = winchPos.y - tug.y;
+                    totalTorqueT += leverArmX * (-dirY * winchForceMagnitude) - leverArmY * (-dirX * winchForceMagnitude);
+                }
+            }
+
+            // Forças de arrasto
+            const linearDrag = 100, lateralDrag = 10, angularDragTug = 200000, angularDragBlock = 400000;
+            const localVxT = tug.vx * Math.cos(-tug.angle) - tug.vy * Math.sin(-tug.angle);
+            const localVyT = tug.vx * Math.sin(-tug.angle) + tug.vy * Math.cos(-tug.angle);
+            const dragForceTx = (localVxT * linearDrag) * Math.cos(tug.angle) - (localVyT * lateralDrag) * Math.sin(tug.angle);
+            const dragForceTy = (localVxT * linearDrag) * Math.sin(tug.angle) + (localVyT * lateralDrag) * Math.cos(tug.angle);
+            totalForceTx -= dragForceTx; totalForceTy -= dragForceTy;
+            totalTorqueT -= tug.va * angularDragTug;
+            const localVxB = block.vx * Math.cos(-block.angle) - block.vy * Math.sin(-block.angle);
+            const localVyB = block.vx * Math.sin(-block.angle) + block.vy * Math.cos(-block.angle);
+            const dragForceBx = (localVxB * linearDrag * 2) * Math.cos(block.angle) - (localVyB * lateralDrag * 2) * Math.sin(block.angle);
+            const dragForceBy = (localVxB * linearDrag * 2) * Math.sin(block.angle) + (localVyB * lateralDrag * 2) * Math.cos(block.angle);
+            totalForceBx -= dragForceBx; totalForceBy -= dragForceBy;
+            totalTorqueB -= block.va * angularDragBlock;
+
+            // Forças de atracação
+            if (isBowMoored) { const f = applyMooringConstraint('bow', bowMooringBollard); totalForceTx += f.force.x; totalForceTy += f.force.y; totalTorqueT += f.torque; }
+            if (isSternMoored) { const f = applyMooringConstraint('stern', sternMooringBollard); totalForceTx += f.force.x; totalForceTy += f.force.y; totalTorqueT += f.torque; }
+
+            // Aplicar forças e atualizar cinemática
+            tug.vx += totalForceTx / tug.mass; tug.vy += totalForceTy / tug.mass; tug.va += totalTorqueT / tug.inertia;
+            block.vx += totalForceBx / block.mass; block.vy += totalForceBy / block.mass; block.va += totalTorqueB / block.inertia;
+            
+            handleCollisions();
+            
+            tug.x += tug.vx; tug.y += tug.vy; tug.angle += tug.va;
+            block.x += block.vx; block.y += block.vy; block.angle += block.va;
+
+            [tug, block].forEach(body => {
+                const size = Math.max(body.width, body.height);
+                if (body.x > canvas.width + size/2) body.x = -size/2; if (body.x < -size/2) body.x = canvas.width + size/2;
+                if (body.y > canvas.height + size/2) body.y = -size/2; if (body.y < -size/2) body.y = canvas.height + size/2;
+            });
+        }
+
+        // --- LOOP DE RENDERIZAÇÃO (GRÁFICOS) ---
+        function draw() {
+            if (!ctx || !tug || !block) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#845422'; ctx.fillRect(pier.x, pier.y, pier.width, pier.height);
+            ctx.fillStyle = '#444'; pier.bollards.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI * 2); ctx.fill(); });
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.1)'; ctx.fillRect(pier.mooringZone.x, pier.mooringZone.y, pier.mooringZone.width, pier.mooringZone.height);
+            drawMooringLines();
+            drawWinchCable();
+            drawBody(block, '#f97316', '#c2410c');
+            drawBody(tug, '#60a5fa', '#2563eb');
+            ctx.save(); ctx.translate(tug.x, tug.y); ctx.rotate(tug.angle);
+            tug.thrusters.forEach(thruster => { ctx.save(); ctx.translate(thruster.x, thruster.y); drawThrusterVisuals(ctx, thruster.jetAngle, thruster.power); ctx.restore(); });
+            ctx.restore();
+            const pixelSpeed = Math.sqrt(tug.vx * tug.vx + tug.vy * tug.vy);
+            speedDisplay.textContent = (pixelSpeed * 15).toFixed(1);
+        }
+        
+        function drawBody(body, fillStyle, strokeStyle) {
+            ctx.save();
+            ctx.translate(body.x, body.y);
+            ctx.rotate(body.angle);
+            const w = body.width, h = body.height;
+            ctx.fillStyle = fillStyle;
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            if (body.shape === 'tug') {
+                const bowRadius = w / 2;
+                ctx.moveTo(-w / 2, h / 2);
+                ctx.lineTo(w / 2, h / 2);
+                ctx.lineTo(w / 2, -h / 2 + bowRadius);
+                ctx.quadraticCurveTo(w / 2, -h / 2, w / 2 - bowRadius, -h / 2);
+                ctx.lineTo(-w / 2 + bowRadius, -h / 2);
+                ctx.quadraticCurveTo(-w / 2, -h / 2, -w / 2, -h / 2 + bowRadius);
+                ctx.closePath();
+            } else {
+                ctx.rect(-w / 2, -h / 2, w, h);
+            }
+            
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -h / 2);
+            ctx.lineTo(0, h/2);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.restore();
+        }
+
+        function drawThrusterVisuals(context, jetAngle, power) {
+            context.save(); context.rotate(jetAngle); context.fillStyle = '#facc15';
+            context.beginPath(); context.moveTo(0, -8); context.lineTo(8, -4); context.lineTo(5, 5); context.lineTo(-5, 5); context.lineTo(-8, -4); context.closePath(); context.fill();
+            if (power > 0) {
+                const jetLength = 10 + power * 0.3, jetWidth = 5 + power * 0.1;
+                context.beginPath(); context.moveTo(0, 5); context.lineTo(-jetWidth, 5 + jetLength); context.lineTo(jetWidth, 5 + jetLength); context.closePath();
+                context.fillStyle = 'rgba(250, 204, 21, 0.7)'; context.fill();
+            }
+            context.restore();
+        }
+        
+        function drawWinchCable() {
+            if (!isWinchConnected) return;
+            const winchPos = getGlobalCoords(tug, tug.winch);
+            const blockConnectionPos = getGlobalCoords(block, block.connectionPoint);
+            ctx.save(); ctx.beginPath(); ctx.moveTo(winchPos.x, winchPos.y); ctx.lineTo(blockConnectionPos.x, blockConnectionPos.y);
+            ctx.strokeStyle = '#eab308'; ctx.lineWidth = 4; ctx.setLineDash([8, 4]); ctx.stroke(); ctx.restore();
+        }
+
+        // --- LÓGICA DE COLISÕES (OTIMIZADA E CORRIGIDA) ---
+        function handleCollisions() {
+            const dynamicBodies = [tug, block];
+            const staticBodies = [pierBody];
+            // PARÂMETRO 1: NÚMERO DE ITERAÇÕES DO SOLUCIONADOR (REDUZIDO)
+            const iterations = 3; 
+
+            for (let iter = 0; iter < iterations; iter++) {
+                for (let i = 0; i < dynamicBodies.length; i++) {
+                    for (let j = i + 1; j < dynamicBodies.length; j++) {
+                        const bodyA = dynamicBodies[i];
+                        const bodyB = dynamicBodies[j];
+                        const dist = Math.hypot(bodyA.x - bodyB.x, bodyA.y - bodyB.y);
+                        const requiredDist = (bodyA.height + bodyB.height) / 1.5;
+                        if (dist < requiredDist) {
+                            const collisionInfo = checkSATCollision(bodyA, bodyB);
+                            if (collisionInfo) {
+                                resolveCollision(collisionInfo);
+                            }
+                        }
+                    }
+                    for (const staticBody of staticBodies) {
+                        const bodyA = dynamicBodies[i];
+                        const dist = Math.hypot(bodyA.x - staticBody.x, bodyA.y - staticBody.y);
+                        const requiredDist = (bodyA.height + staticBody.height) / 1.5;
+                         if (dist < requiredDist) {
+                            const collisionInfo = checkSATCollision(bodyA, staticBody);
+                            if (collisionInfo) {
+                                resolveCollision(collisionInfo);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function getVertices(body) {
+            const w = body.width / 2, h = body.height / 2;
+            const corners = [{x: -w, y: -h}, {x: w, y: -h}, {x: w, y: h}, {x: -w, y: h}];
+            return corners.map(corner => getGlobalCoords(body, corner));
+        }
+
+        function checkSATCollision(bodyA, bodyB) {
+            const aVertices = getVertices(bodyA), bVertices = getVertices(bodyB);
+            let minOverlap = Infinity, collisionNormal = null;
+            const axes = [];
+            for (let i = 0; i < aVertices.length; i++) {
+                const p1 = aVertices[i], p2 = aVertices[(i + 1) % aVertices.length];
+                const edge = { x: p2.x - p1.x, y: p2.y - p1.y };
+                axes.push({ x: -edge.y, y: edge.x });
+            }
+            for (let i = 0; i < bVertices.length; i++) {
+                const p1 = bVertices[i], p2 = bVertices[(i + 1) % bVertices.length];
+                const edge = { x: p2.x - p1.x, y: p2.y - p1.y };
+                axes.push({ x: -edge.y, y: edge.x });
+            }
+            for (const axis of axes) {
+                const projA = projectVertices(aVertices, axis);
+                const projB = projectVertices(bVertices, axis);
+                const overlap = Math.min(projA.max, projB.max) - Math.max(projA.min, projB.min);
+                if (overlap < 0) return null;
+                if (overlap < minOverlap) { minOverlap = overlap; collisionNormal = axis; }
+            }
+            const dirVec = { x: bodyB.x - bodyA.x, y: bodyB.y - bodyA.y };
+            if (dot(dirVec, collisionNormal) < 0) { collisionNormal.x *= -1; collisionNormal.y *= -1; }
+            const len = Math.hypot(collisionNormal.x, collisionNormal.y);
+            if (len > 0) { collisionNormal.x /= len; collisionNormal.y /= len; }
+            return { bodyA, bodyB, penetration: minOverlap, normal: collisionNormal };
+        }
+
+        function projectVertices(vertices, axis) {
+            let min = Infinity, max = -Infinity;
+            for (const vertex of vertices) {
+                const proj = dot(vertex, axis);
+                if (proj < min) min = proj;
+                if (proj > max) max = proj;
+            }
+            return { min, max };
+        }
+        
+        function findContactPoints(collision) {
+            const { bodyA, bodyB } = collision;
+            const verticesA = getVertices(bodyA);
+            const verticesB = getVertices(bodyB);
+            let minDistSq = Infinity;
+            let contactPoint = null;
+
+            for (const v of verticesA) {
+                for (const v2 of verticesB) {
+                    const distSq = (v.x - v2.x)**2 + (v.y - v2.y)**2;
+                    if (distSq < minDistSq) {
+                        minDistSq = distSq;
+                        contactPoint = { x: (v.x + v2.x) / 2, y: (v.y + v2.y) / 2 };
+                    }
+                }
+            }
+            collision.contactPoint = contactPoint;
+        }
+
+
+        function resolveCollision(collision) {
+            findContactPoints(collision);
+            const { bodyA, bodyB, penetration, normal, contactPoint } = collision;
+            if (!contactPoint) return;
+
+            // PARÂMETRO 2: Elasticidade da colisão (0 = sem repulsão)
+            const restitution = 0.0; 
+
+            // PARÂMETRO 3: Percentual de correção de posição (menor = mais suave)
+            const slop = 0.05, percent = 0.0001; 
+            
+            const correction = Math.max(penetration - slop, 0) / (bodyA.invMass + bodyB.invMass + 1e-9) * percent;
+            if (bodyA.invMass > 0) {
+                bodyA.x -= bodyA.invMass * correction * normal.x;
+                bodyA.y -= bodyA.invMass * correction * normal.y;
+            }
+            if (bodyB.invMass > 0) {
+                bodyB.x += bodyB.invMass * correction * normal.x;
+                bodyB.y += bodyB.invMass * correction * normal.y;
+            }
+            
+            const rA = { x: contactPoint.x - bodyA.x, y: contactPoint.y - bodyA.y };
+            const rB = { x: contactPoint.x - bodyB.x, y: contactPoint.y - bodyB.y };
+            const rv = {
+                x: bodyB.vx + (-bodyB.va * rB.y) - (bodyA.vx + (-bodyA.va * rA.y)),
+                y: bodyB.vy + (bodyB.va * rB.x) - (bodyA.vy + (bodyA.va * rA.x))
+            };
+            const velAlongNormal = dot(rv, normal);
+            if (velAlongNormal > 0) return;
+            const rACrossN = crossVec2D(rA, normal);
+            const rBCrossN = crossVec2D(rB, normal);
+            const invMassSum = bodyA.invMass + bodyB.invMass + (rACrossN * rACrossN) * bodyA.invInertia + (rBCrossN * rBCrossN) * bodyB.invInertia;
+            if (invMassSum < 1e-9) return;
+            const j = -(1 + restitution) * velAlongNormal / invMassSum;
+            const impulse = { x: j * normal.x, y: j * normal.y };
+            bodyA.vx -= bodyA.invMass * impulse.x;
+            bodyA.vy -= bodyA.invMass * impulse.y;
+            bodyA.va -= bodyA.invInertia * crossVec2D(rA, impulse);
+            bodyB.vx += bodyB.invMass * impulse.x;
+            bodyB.vy += bodyB.invMass * impulse.y;
+            bodyB.va += bodyB.invInertia * crossVec2D(rB, impulse);
+        }
+        
+        function dot(v1, v2) { return v1.x * v2.x + v1.y * v2.y; }
+        function crossVec2D(v1, v2) { return v1.x * v2.y - v1.y * v2.x; }
+
+        // --- LÓGICA DE ATRACAÇÃO ---
+        function getTugMooringPoint(part) {
+            const localY = (part === 'bow') ? -tug.height / 2 : tug.height / 2;
+            return getGlobalCoords(tug, {x: 0, y: localY});
+        }
+        
+        function isPointInRect(point, rect) {
+            return point.x >= rect.x && point.x <= rect.x + rect.width &&
+                   point.y >= rect.y && point.y <= rect.y + rect.height;
+        }
+
+        function updateMooringStatus() {
+            const bowPoint = getTugMooringPoint('bow'), sternPoint = getTugMooringPoint('stern');
+            const canMoorBow = isPointInRect(bowPoint, pier.mooringZone);
+            const canMoorStern = isPointInRect(sternPoint, pier.mooringZone);
+            moorBowBtn.disabled = !isBowMoored && !canMoorBow;
+            moorSternBtn.disabled = !isSternMoored && !canMoorStern;
+            moorBowBtn.textContent = isBowMoored ? 'Largar Proa' : 'Atracar Proa';
+            moorSternBtn.textContent = isSternMoored ? 'Largar Popa' : 'Atracar Popa';
+        }
+
+        function toggleMooring(part) {
+            if (part === 'bow') {
+                isBowMoored = !isBowMoored;
+                if (isBowMoored) {
+                    const bowPos = getTugMooringPoint('bow');
+                    const availableBollards = pier.bollards.filter(b => b !== sternMooringBollard);
+                    if (availableBollards.length > 0) {
+                        bowMooringBollard = availableBollards.reduce((p, c) => Math.hypot(bowPos.x - p.x, bowPos.y - p.y) < Math.hypot(bowPos.x - c.x, bowPos.y - c.y) ? p : c);
+                    }
+                } else { bowMooringBollard = null; }
+            } else if (part === 'stern') {
+                isSternMoored = !isSternMoored;
+                if (isSternMoored) {
+                    const sternPos = getTugMooringPoint('stern');
+                    const availableBollards = pier.bollards.filter(b => b !== bowMooringBollard);
+                     if (availableBollards.length > 0) {
+                        sternMooringBollard = availableBollards.reduce((p, c) => Math.hypot(sternPos.x - p.x, sternPos.y - p.y) < Math.hypot(sternPos.x - c.x, sternPos.y - c.y) ? p : c);
+                    }
+                } else { sternMooringBollard = null; }
+            }
+            updateMooringStatus();
+        }
+
+        function applyMooringConstraint(part, bollard) {
+            const k = 50, c = 40, maxMooringForce = 50;
+            const worldPos = getTugMooringPoint(part);
+            const r = { x: worldPos.x - tug.x, y: worldPos.y - tug.y };
+            const pointVel = { x: tug.vx - tug.va * r.y, y: tug.vy + tug.va * r.x };
+            const displacement = { x: bollard.x - worldPos.x, y: bollard.y - worldPos.y };
+            const springForce = { x: displacement.x * k, y: displacement.y * k };
+            const dampingForce = { x: -pointVel.x * c, y: -pointVel.y * c };
+            let totalForce = { x: springForce.x + dampingForce.x, y: springForce.y + dampingForce.y };
+            const forceMagnitude = Math.hypot(totalForce.x, totalForce.y);
+            if (forceMagnitude > maxMooringForce) {
+                totalForce.x = (totalForce.x / forceMagnitude) * maxMooringForce;
+                totalForce.y = (totalForce.y / forceMagnitude) * maxMooringForce;
+            }
+            const torque = r.x * totalForce.y - r.y * totalForce.x;
+            return { force: totalForce, torque: torque };
+        }
+
+        function drawMooringLines() {
+            ctx.save(); ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 4; ctx.setLineDash([10, 5]);
+            if (isBowMoored && bowMooringBollard) {
+                const bowPos = getTugMooringPoint('bow');
+                ctx.beginPath(); ctx.moveTo(bowPos.x, bowPos.y); ctx.lineTo(bowMooringBollard.x, bowMooringBollard.y); ctx.stroke();
+            }
+            if (isSternMoored && sternMooringBollard) {
+                const sternPos = getTugMooringPoint('stern');
+                ctx.beginPath(); ctx.moveTo(sternPos.x, sternPos.y); ctx.lineTo(sternMooringBollard.x, sternMooringBollard.y); ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // --- INÍCIO DA APLICAÇÃO ---
+        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+            const rect = container.getBoundingClientRect();
+            const desiredWidth = rect.height * (16 / 9);
+            canvas.width = Math.min(rect.width, desiredWidth) * 0.98;
+            canvas.height = rect.height * 0.98;
+            if (typeof resetSimulator === 'function') {
+                resetSimulator();
+            }
+        }
+        function initializeApp() {
+            resizeCanvas();
+            setupEventListeners();
+            gameLoop();
+        }
+        window.addEventListener('load', initializeApp);
+        window.addEventListener('resize', resizeCanvas);
+    });
+    </script>
+</body>
+</html>

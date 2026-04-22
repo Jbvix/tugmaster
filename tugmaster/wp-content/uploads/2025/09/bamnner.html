@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOC Dashboard v3.2 - TugLife FM</title>
+    <style>
+        :root { --primary-color: #1f98a7; --background-gradient: linear-gradient(160deg, #0f2027, #203a43, #2c5364); --text-light: #e0e0e0; --sidebar-bg: rgba(0,0,0,0.2); --sidebar-width: 250px; }
+        body { background-color: #1a1a2e; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Roboto Condensed', sans-serif; color: var(--text-light); overflow: hidden; }
+        .goc-container { width: 100%; height: 100%; display: flex; }
+        .sidebar { width: var(--sidebar-width); background: var(--sidebar-bg); padding: 15px; display: flex; flex-direction: column; overflow-y: auto; border-right: 1px solid var(--primary-color); }
+        .sidebar h2 { font-family: 'Orbitron', sans-serif; text-align: center; margin: 0 0 15px 0; color: #fff; }
+        .view-switcher { display: flex; gap: 10px; margin-bottom: 20px; }
+        .view-btn { flex-grow: 1; background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 10px; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
+        .view-btn.active, .view-btn:hover { background-color: var(--primary-color); color: #fff; }
+        .port-list { list-style: none; padding: 0; margin: 0; }
+        .port-btn { display: block; width: 100%; background: transparent; border: 1px solid transparent; color: var(--text-light); padding: 12px; border-radius: 4px; cursor: pointer; text-align: left; transition: all 0.3s; font-size: 1em; }
+        .port-btn.active, .port-btn:hover { background-color: rgba(31, 152, 167, 0.2); border-color: var(--primary-color); }
+        .main-content { flex-grow: 1; display: flex; overflow: hidden; }
+        .display-panel { flex-grow: 1; background-color: #000; position: relative; }
+        
+        /* --- CORREÇÃO: Regra para o Iframe preencher o painel --- */
+        .display-panel iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .radio-operations-panel { width: 450px; flex-shrink: 0; display: flex; flex-direction: column; border-left: 1px solid var(--primary-color); background: var(--background-gradient); }
+        .radio-panel { padding: 20px; background-color: rgba(0,0,0,0.2); border-bottom: 1px solid var(--primary-color); }
+        .radio-branding h1 { font-family: 'Orbitron', sans-serif; font-size: 32px; color: #fff; text-shadow: 0 0 10px var(--primary-color); margin: 0 0 15px 0; }
+        .radio-controls { display: flex; justify-content: space-between; align-items: center; }
+        .live-indicator { display: flex; align-items: center; background-color: #6c757d; color: #fff; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 14px; transition: background-color 0.3s; }
+        .live-indicator.playing { background-color: #c0392b; }
+        .live-dot { width: 10px; height: 10px; background-color: #ff5252; border-radius: 50%; margin-right: 8px; }
+        .live-indicator.playing .live-dot { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } }
+        .cta-button { background-color: var(--primary-color); color: #fff; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: all 0.3s; text-decoration: none; min-width: 130px; text-align: center; }
+        .cta-button:hover { background-color: #29c7d8; box-shadow: 0 0 15px rgba(41, 199, 216, 0.7); }
+        .schedule-panel { padding: 20px; flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; }
+        .schedule-nav { display: flex; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 5px; }
+        .day-btn { background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 5px; border-radius: 4px; cursor: pointer; transition: all 0.3s; flex-grow: 1; }
+        .day-btn:hover, .day-btn.active { background-color: var(--primary-color); color: #fff; }
+        .program-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; }
+        .program-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid rgba(31, 152, 167, 0.2); }
+        .program-time { font-family: 'Orbitron', sans-serif; font-size: 1em; color: var(--primary-color); flex-basis: 120px; flex-shrink: 0; }
+        .program-details h3 { margin: 0; font-size: 1.1em; color: #fff; }
+        .program-item.on-air { background-color: rgba(41, 199, 216, 0.15); border-left: 4px solid #29c7d8; padding-left: 8px; font-weight: bold; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="goc-container">
+        <div class="sidebar">
+            <h2>OPERAÇÕES</h2>
+            <div class="view-switcher">
+                <button class="view-btn" data-view="windy">Windy</button>
+                <button class="view-btn" data-view="marinetraffic">MarineTraffic</button>
+            </div>
+            <ul class="port-list" id="port-list"></ul>
+        </div>
+        <div class="main-content">
+            <div class="display-panel" id="display-panel">
+                </div>
+            <div class="radio-operations-panel">
+                <div class="radio-panel">
+                    <div class="radio-branding"><h1>TugLife FM</h1></div>
+                    <div class="radio-controls">
+                        <div id="live-indicator" class="live-indicator"><span class="live-dot"></span><span>AO VIVO</span></div>
+                        <a href="#" id="play-pause-btn" class="cta-button">OUÇA AGORA</a>
+                    </div>
+                </div>
+                <div class="schedule-panel">
+                    <div class="schedule-nav" id="schedule-nav"></div>
+                    <ul id="program-list" class="program-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <audio id="radio-stream" preload="none"><source src="https://servidor27.brlogic.com:7098/live" type="audio/mpeg"></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- MÓDULO GOC (SIDEBAR E DISPLAY) ---
+            const ports = [ { name: "Porto de Santos", x: -46.3280, y: -23.9608, z: 13 }, { name: "Porto do Rio de Janeiro", x: -43.1600, y: -22.9000, z: 13 }, { name: "Porto de Suape", x: -34.9540, y: -8.3920, z: 13 }, { name: "Terminal Ponta da Madeira (MA)", x: -44.3650, y: -2.5350, z: 13 }, { name: "Porto de Itajaí", x: -48.6600, y: -26.9000, z: 13 }, { name: "Porto de Paranaguá", x: -48.5000, y: -25.5100, z: 13 }, { name: "Porto de Rio Grande", x: -52.1000, y: -32.0300, z: 13 }, { name: "Porto de Salvador", x: -38.5100, y: -12.9700, z: 13 }, { name: "Porto do Pecém", x: -38.7700, y: -3.5400, z: 13 }, { name: "Vila do Conde / Barcarena (PA)", x: -48.7400, y: -1.5150, z: 13 }, { name: "Itaqui / Alumar (MA)", x: -44.3450, y: -2.5550, z: 13 }, { name: "Porto de Mucuripe", x: -38.4830, y: -3.7160, z: 13 } ];
+            const viewTemplates = { windy: 'https://embed.windy.com/embed.html?type=map&location=coordinates&zoom={z}&lat={y}&lon={x}', marinetraffic: 'https://www.marinetraffic.com/en/ais/embed/zoom:{z}/centerx:{x}/centery:{y}/maptype:0/shownames:true/showmenu:false/showtrack:false' };
+            let currentPortIndex = 0;
+            let activeView = 'marinetraffic';
+            const displayPanel = document.getElementById('display-panel');
+            const portList = document.getElementById('port-list');
+            const viewSwitcher = document.querySelector('.view-switcher');
+            
+            function updateDisplay(portIndex) {
+                currentPortIndex = (portIndex + ports.length) % ports.length;
+                const port = ports[currentPortIndex];
+                const url = viewTemplates[activeView].replace('{x}', port.x).replace('{y}', port.y).replace('{z}', port.z || 13);
+                displayPanel.innerHTML = ''; 
+                const frame = document.createElement("iframe");
+                frame.loading = "lazy";
+                frame.referrerPolicy = "no-referrer-when-downgrade";
+                frame.allowFullscreen = true;
+                frame.src = url;
+                displayPanel.appendChild(frame);
+                portList.querySelectorAll("button").forEach((b, k) => b.classList.toggle("active", k === currentPortIndex));
+                localStorage.setItem('goc:lastPortIndex', String(currentPortIndex));
+                localStorage.setItem('goc:lastView', activeView);
+            }
+            ports.forEach((port, index) => { const li = document.createElement('li'); const btn = document.createElement('button'); btn.className = 'port-btn'; btn.textContent = port.name.replace("Porto de ","").replace("Porto do ",""); btn.addEventListener('click', () => updateDisplay(index)); li.appendChild(btn); portList.appendChild(li); });
+            viewSwitcher.addEventListener('click', (e) => { if (e.target.classList.contains('view-btn')) { activeView = e.target.dataset.view; viewSwitcher.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active')); e.target.classList.add('active'); updateDisplay(currentPortIndex); } });
+            window.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") { updateDisplay(currentPortIndex - 1); } if (e.key === "ArrowRight") { updateDisplay(currentPortIndex + 1); } });
+
+            // --- CORREÇÃO: Lógica do painel da rádio reintegrada ---
+            const weeklySchedule = { domingo: [ { startHour: 0, endHour: 1, title: "Viajando Na Emoção" }, { startHour: 1, endHour: 3, title: "Top classic 70,80,90" }, { startHour: 3, endHour: 8, title: "Coração Sertanejo" }, { startHour: 8, endHour: 10, title: "Algazarra" }, { startHour: 10, endHour: 13, title: "Top Hits 80" }, { startHour: 13, endHour: 14, title: "Os Melhores Remixes" }, { startHour: 14, endHour: 15, title: "Flash Back Top Hits" }, { startHour: 15, endHour: 16, title: "TugKids" }, { startHour: 16, endHour: 18, title: "Duelo de Canções" }, { startHour: 18, endHour: 19, title: "Rock da P.M." }, { startHour: 19, endHour: 20, title: "O melhor do Soul" }, { startHour: 20, endHour: 22, title: "Forro de Bordo" }, { startHour: 22, endHour: 23, title: "Top Hits 90" }, { startHour: 23, endHour: 24, title: "Hora do Rei (Roberto Carlos)" } ], segunda: [ { startHour: 0, endHour: 2, title: "Love Hits" }, { startHour: 2, endHour: 6, title: "Ancora da Fé" }, { startHour: 6, endHour: 12, title: "Acorda Marujo - Adrenalina" }, { startHour: 12, endHour: 16, title: "Show da Tarde" }, { startHour: 16, endHour: 17, title: "Vibe do Reagge" }, { startHour: 17, endHour: 18, title: "Back in Time" }, { startHour: 18, endHour: 19, title: "Vibe Total" }, { startHour: 19, endHour: 20, title: "Fita K7" }, { startHour: 20, endHour: 21, title: "Flash Back Top Hits" }, { startHour: 21, endHour: 22, title: "O melhor do Soul" }, { startHour: 22, endHour: 23, title: "Hits Eletrônicos" }, { startHour: 23, endHour: 24, title: "Hora do Rei (Roberto Carlos)" } ], terca: [ { startHour: 0, endHour: 2, title: "Insônia" }, { startHour: 2, endHour: 6, title: "O Melhor do Flash House" }, { startHour: 6, endHour: 12, title: "Acorda Marujo - Adrenalina" }, { startHour: 12, endHour: 14, title: "Mix Gospel" }, { startHour: 14, endHour: 15, title: "Hits Eletrônicos" }, { startHour: 15, endHour: 17, title: "Forro de Bordo" }, { startHour: 17, endHour: 19, title: "O melhor do Soul" }, { startHour: 19, endHour: 20, title: "Hora do Marinheiro" }, { startHour: 20, endHour: 23, title: "Ancora da Fé" }, { startHour: 23, endHour: 24, title: "Hora do Rei (Roberto Carlos)" } ], quarta: [ { startHour: 0, endHour: 6, title: "Ancora da Fé" }, { startHour: 6, endHour: 12, title: "Acorda Marujo - Adrenalina" }, { startHour: 12, endHour: 16, title: "Show da Tarde" }, { startHour: 16, endHour: 17, title: "Galpão Farrapo" }, { startHour: 17, endHour: 18, title: "Os Melhores Remixes" }, { startHour: 18, endHour: 20, title: "Rock da P.M." }, { startHour: 20, endHour: 22, title: "Convés Brasil" }, { startHour: 22, endHour: 23, title: "Gospel Night" }, { startHour: 23, endHour: 24, title: "Hora do Rei (Roberto Carlos)" } ], quinta: [ { startHour: 0, endHour: 6, title: "Ancora da Fé" }, { startHour: 6, endHour: 12, title: "Acorda Marujo - Adrenalina" }, { startHour: 12, endHour: 16, title: "Show da Tarde" }, { startHour: 16, endHour: 17, title: "Axé e Pagode" }, { startHour: 17, endHour: 18, title: "Vibe Total" }, { startHour: 18, endHour: 19, title: "Top Hits 90" }, { startHour: 19, endHour: 20, title: "Clube do Brega" }, { startHour: 20, endHour: 23, title: "Back in Time" }, { startHour: 23, endHour: 24, title: "Hora do Rei (Roberto Carlos)" } ], sexta: [ { startHour: 0, endHour: 3, title: "Insônia" }, { startHour: 3, endHour: 4, title: "Top Hits 80" }, { startHour: 4, endHour: 6, title: "Ancora da Fé" }, { startHour: 6, endHour: 12, title: "Acorda Marujo - Adrenalina" }, { startHour: 12, endHour: 15, title: "Show da Tarde" }, { startHour: 15, endHour: 19, title: "Top Hits 80" }, { startHour: 19, endHour: 20, title: "Hora do Marinheiro" }, { startHour: 20, endHour: 21, title: "Os Melhores Remixes" }, { startHour: 21, endHour: 23, title: "Back in Time" }, { startHour: 23, endHour: 24, title: "Hora do Rei (Roberto Carlos)" } ], sabado: [ { startHour: 0, endHour: 4, title: "Top classic 70,80,90" }, { startHour: 4, endHour: 8, title: "Mais Brasil" }, { startHour: 8, endHour: 9, title: "Flash Back Top Hits" }, { startHour: 9, endHour: 10, title: "Bora Viajar" }, { startHour: 10, endHour: 12, title: "Café com Samba" }, { startHour: 12, endHour: 14, title: "Forro de Bordo" }, { startHour: 14, endHour: 15, title: "Nação Gaúcha" }, { startHour: 15, endHour: 16, title: "Combustão Interna" }, { startHour: 16, endHour: 18, title: "Os Melhores Remixes" }, { startHour: 18, endHour: 19, title: "O melhor do Soul" }, { startHour: 19, endHour: 21, title: "Vibe Total" }, { startHour: 21, endHour: 23, title: "Clube do Brega" }, { startHour: 23, endHour: 24, title: "Hora do Rei (Roberto Carlos)" } ] };
+            const dayNames = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"]; const dayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+            const playPauseBtn = document.getElementById('play-pause-btn'); const radioStream = document.getElementById('radio-stream'); const liveIndicator = document.getElementById('live-indicator'); const programListElement = document.getElementById('program-list'); const scheduleNavElement = document.getElementById('schedule-nav'); const now = new Date(); const todayIndex = now.getDay(); let selectedDayIndex = todayIndex;
+            playPauseBtn.addEventListener('click', (e) => { e.preventDefault(); radioStream.paused ? radioStream.play() : radioStream.pause(); });
+            radioStream.addEventListener('play', () => { playPauseBtn.textContent = 'Pausar'; liveIndicator.classList.add('playing'); });
+            radioStream.addEventListener('pause', () => { playPauseBtn.textContent = 'OUÇA AGORA'; liveIndicator.classList.remove('playing'); });
+            function renderSchedule(dayIndex) { programListElement.innerHTML = ''; const dayKey = dayNames[dayIndex]; const schedule = weeklySchedule[dayKey]; schedule.forEach(program => { const listItem = document.createElement('li'); listItem.classList.add('program-item'); listItem.id = `${dayKey}-program-${program.startHour}`; const endTime = (program.endHour === 24) ? '00:00' : `${String(program.endHour).padStart(2, '0')}:00`; listItem.innerHTML = `<div class="program-time">${String(program.startHour).padStart(2, '0')}:00 - ${endTime}</div><div class="program-details"><h3>${program.title}</h3></div>`; programListElement.appendChild(listItem); }); highlightCurrentProgram(); }
+            function highlightCurrentProgram() { document.querySelectorAll('.program-item').forEach(item => item.classList.remove('on-air')); if (selectedDayIndex === todayIndex) { const currentHour = new Date().getHours(); const dayKey = dayNames[todayIndex]; const currentProgram = weeklySchedule[dayKey].find(p => currentHour >= p.startHour && currentHour < p.endHour); if (currentProgram) { const currentProgramElement = document.getElementById(`${dayKey}-program-${currentProgram.startHour}`); if (currentProgramElement) currentProgramElement.classList.add('on-air'); } } }
+            dayLabels.forEach((label, index) => { const btn = document.createElement('button'); btn.className = 'day-btn'; btn.textContent = label; btn.dataset.dayIndex = index; if (index === todayIndex) btn.classList.add('active'); scheduleNavElement.appendChild(btn); btn.addEventListener('click', () => { selectedDayIndex = index; document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderSchedule(index); }); });
+            renderSchedule(todayIndex); setInterval(highlightCurrentProgram, 60000);
+
+            // --- INICIALIZAÇÃO DO SISTEMA GOC ---
+            function bootGoc() { const lastView = localStorage.getItem('goc:lastView') || 'marinetraffic'; const lastPortIndex = Number(localStorage.getItem('goc:lastPortIndex')) || 0; activeView = lastView; currentPortIndex = Number.isFinite(lastPortIndex) ? lastPortIndex : 0; viewSwitcher.querySelectorAll('.view-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.view === activeView)); updateDisplay(currentPortIndex); }
+            bootGoc();
+        });
+    </script>
+</body>
+</html>

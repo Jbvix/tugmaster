@@ -1,0 +1,235 @@
+<!-- Cabeçalho -->
+<link rel="preconnect" href="https://cesium.com">
+<link rel="preconnect" href="https://unpkg.com">
+<link href="https://unpkg.com/cesium/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<script src="https://unpkg.com/cesium/Build/Cesium/Cesium.js"></script>
+
+<!-- Container responsivo -->
+<div id="globo" style="position:relative; padding-bottom:56.25%; height:0; border-radius:12px; overflow:hidden; box-shadow:0 6px 24px rgba(0,0,0,.35);">
+  <div id="cesiumContainer" style="position:absolute; inset:0;"></div>
+
+  <!-- Título flutuante -->
+  <div style="position:absolute; top:12px; left:12px; background:rgba(0,0,0,.55); color:#fff; 
+              padding:8px 12px; border-radius:10px; font:600 16px system-ui; z-index:10;">
+    TugLife  Portos Estrategicos (Globo 3D)
+    <div id="overlayControles" style="position:absolute; top:50px; right:50px; background:rgba(0,0,0,.55); color:#fff; padding:10px 12px; border-radius:10px; font:500 13px system-ui; z-index:11; max-width: 280px;">
+      <div style="font-weight:700; margin-bottom:6px;">Controles</div>
+      <div style="font-size:12px; line-height:1.35; opacity:.95;">
+        <div><b>W/S</b> avanca/recua • <b>A/D</b> lateral</div>
+        <div><b>Q/E</b> sobe/desce • <b>Mouse</b> (clique/arraste) olhar</div>
+      </div>
+      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; max-height:200px; overflow-y:auto;">
+        <button id="btn_fit_tiles" style="background:#8aff00; color:#001; border:0; border-radius:10px; padding:6px 10px; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.35);">Objetos 3D</button>
+        <input type="text" id="filtroPorto" placeholder="Filtrar porto..." style="width:100%;margin-bottom:6px;padding:4px;border-radius:6px;border:1px solid #555;font-size:12px;" />
+        <div id="portoButtons" style="display:grid; grid-template-columns:1fr 1fr; gap:4px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Player TugLife FM -->
+<div id="tuglifePlayer" style="position:fixed; right:16px; bottom:16px; z-index:9999; background:rgba(0,0,0,.75); color:#fff; backdrop-filter: blur(4px); border:1px solid #333; border-radius:14px; box-shadow:0 6px 24px rgba(0,0,0,.35); width:min(100%, 380px);">
+  <div style="padding:10px 12px;">
+    <div style="font:700 14px system-ui; letter-spacing:.2px; margin-bottom:6px;">Ouvir a TugLife FM</div>
+    <audio id="audioEl" controls autoplay style="width:100%">
+      <source src="https://servidor27.brlogic.com:7098/live" type="audio/mpeg">
+      Seu navegador não suporta áudio HTML5.
+    </audio>
+  </div>
+</div>
+
+<script>
+  Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwOGEzZmY0Ni02NDIzLTRiNjItYTFhYS0wNmEwZmM5N2JhMDUiLCJpZCI6MzM0MTg5LCJpYXQiOjE3NTU4MDA5NDJ9.wSUbSiB3k-QELyfoqDZjUdkM2T-agydTn_H_3P6wO2c";
+
+  const viewer = new Cesium.Viewer("cesiumContainer", {
+    terrain: Cesium.Terrain.fromWorldTerrain(),
+    animation: false, timeline: false, baseLayerPicker: true, geocoder: true,
+    sceneModePicker: false, navigationHelpButton: false, homeButton: true,
+    fullscreenButton: true
+  });
+
+  (function(){
+    const scene = viewer.scene;
+    const canvas = viewer.canvas;
+    canvas.setAttribute("tabindex", "0");
+    canvas.onclick = function () { canvas.focus(); };
+    const ellipsoid = scene.globe.ellipsoid;
+
+    scene.screenSpaceCameraController.enableRotate = false;
+    scene.screenSpaceCameraController.enableTranslate = false;
+    scene.screenSpaceCameraController.enableZoom = false;
+    scene.screenSpaceCameraController.enableTilt = false;
+    scene.screenSpaceCameraController.enableLook = false;
+
+    let startMousePosition;
+    let mousePosition;
+    const flags = {
+      looking: false,
+      moveForward: false,
+      moveBackward: false,
+      moveUp: false,
+      moveDown: false,
+      moveLeft: false,
+      moveRight: false,
+    };
+
+    const handler = new Cesium.ScreenSpaceEventHandler(canvas);
+
+    handler.setInputAction(function (movement) {
+      flags.looking = true;
+      mousePosition = startMousePosition = Cesium.Cartesian3.clone(movement.position);
+    }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+
+    handler.setInputAction(function (movement) {
+      mousePosition = movement.endPosition;
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+    handler.setInputAction(function () {
+      flags.looking = false;
+    }, Cesium.ScreenSpaceEventType.LEFT_UP);
+
+    function getFlagForKeyCode(code) {
+      switch (code) {
+        case "KeyW": return "moveForward";
+        case "KeyS": return "moveBackward";
+        case "KeyQ": return "moveUp";
+        case "KeyE": return "moveDown";
+        case "KeyD": return "moveRight";
+        case "KeyA": return "moveLeft";
+        default: return undefined;
+      }
+    }
+
+    document.addEventListener("keydown", function (e) {
+      const flagName = getFlagForKeyCode(e.code);
+      if (typeof flagName !== "undefined") flags[flagName] = true;
+    }, false);
+
+    document.addEventListener("keyup", function (e) {
+      const flagName = getFlagForKeyCode(e.code);
+      if (typeof flagName !== "undefined") flags[flagName] = false;
+    }, false);
+
+    viewer.clock.onTick.addEventListener(function () {
+      const camera = viewer.camera;
+
+      if (flags.looking) {
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        const x = (mousePosition.x - startMousePosition.x) / width;
+        const y = -(mousePosition.y - startMousePosition.y) / height;
+        const lookFactor = 0.05;
+        camera.lookRight(x * lookFactor);
+        camera.lookUp(y * lookFactor);
+      }
+
+      const cameraHeight = ellipsoid.cartesianToCartographic(camera.position).height;
+      const moveRate = cameraHeight / 100.0;
+
+      if (flags.moveForward) camera.moveForward(moveRate);
+      if (flags.moveBackward) camera.moveBackward(moveRate);
+      if (flags.moveUp) camera.moveUp(moveRate);
+      if (flags.moveDown) camera.moveDown(moveRate);
+      if (flags.moveLeft) camera.moveLeft(moveRate);
+      if (flags.moveRight) camera.moveRight(moveRate);
+    });
+  })();
+
+  (async () => {
+    try {
+      const tileset1 = await Cesium.Cesium3DTileset.fromIonAssetId(3654429);
+      const tileset2 = await Cesium.Cesium3DTileset.fromIonAssetId(3654228);
+	  const tileset3 = await Cesium.Cesium3DTileset.fromIonAssetId(3654529);
+      const tileset4 = await Cesium.Cesium3DTileset.fromIonAssetId(3654526);
+      
+      viewer.scene.primitives.add(tileset1);
+      viewer.scene.primitives.add(tileset2);
+	  viewer.scene.primitives.add(tileset3);
+      viewer.scene.primitives.add(tileset4);
+
+      await tileset1.readyPromise;
+      await tileset2.readyPromise;
+	  await tileset3.readyPromise;
+      await tileset4.readyPromise;
+
+      const unionBS = Cesium.BoundingSphere.union(tileset1.boundingSphere, tileset2.boundingSphere);
+
+      const fitBtn = document.getElementById('btn_fit_tiles');
+      if (fitBtn) {
+        fitBtn.onclick = () => viewer.camera.flyToBoundingSphere(unionBS, { duration: 1.2 });
+      }
+
+      try {
+        await viewer.zoomTo([tileset1, tileset2 ,tileset3, tileset4]);
+      } catch (_) {
+        viewer.camera.flyToBoundingSphere(unionBS, { duration: 1.5 });
+      }
+    } catch (e) {
+      console.error("Falha ao carregar tilesets:", e);
+      const aviso = document.createElement('div');
+      aviso.textContent = '⚠️ Não foi possível carregar os tilesets (Assets 3654429 e/ou 3654228). Verifique o token/asset.';
+      aviso.style.cssText = 'position:absolute;top:12px;right:12px;background:rgba(255,60,60,.9);color:#fff;padding:8px 12px;border-radius:8px;font:600 13px system-ui;z-index:20;';
+      document.getElementById('globo').appendChild(aviso);
+      const fitBtn = document.getElementById('btn_fit_tiles');
+      if (fitBtn) { fitBtn.disabled = true; fitBtn.style.opacity = .5; fitBtn.title = 'Tilesets indisponíveis'; }
+    }
+  })();
+
+  const portos = [
+    { nome: "Porto de Santos (SP)", lat: -23.9608, lon: -46.3280 },
+    { nome: "Porto do Rio de Janeiro (RJ)", lat: -22.9000, lon: -43.1600 },
+    { nome: "Porto de Paranaguá (PR)", lat: -25.5161, lon: -48.5044 },
+    { nome: "Porto de Itajaí (SC)", lat: -26.9000, lon: -48.6500 },
+    { nome: "Porto de São Francisco do Sul (SC)", lat: -26.2440, lon: -48.6350 },
+    { nome: "Porto de Rio Grande (RS)", lat: -32.0349, lon: -52.1071 },
+    { nome: "Porto de Vitória (ES)", lat: -20.3194, lon: -40.3128 },
+    { nome: "Porto de Suape (PE)", lat: -8.3920, lon: -34.9540 },
+    { nome: "Porto de Salvador (BA)", lat: -12.9708, lon: -38.5111 },
+    { nome: "Porto de Mucuripe (CE)", lat: -3.7184, lon: -38.4823 },
+    { nome: "Porto do Pecém (CE)", lat: -3.5433, lon: -38.8359 },
+    { nome: "Porto do Itaqui / Ponta da Madeira (MA)", lat: -2.5350, lon: -44.3650 },
+    { nome: "Porto de Fortaleza (CE)", lat: -3.7182, lon: -38.4710 },
+    { nome: "Porto de Imbituba (SC)", lat: -28.2400, lon: -48.6650 },
+    { nome: "Porto de Cabedelo (PB)", lat: -6.9667, lon: -34.8417 },
+    { nome: "Porto de Natal (RN)", lat: -5.7789, lon: -35.1927 },
+    { nome: "Porto de Recife (PE)", lat: -8.0632, lon: -34.8711 },
+    { nome: "Porto de Maceió (AL)", lat: -9.6658, lon: -35.7250 },
+    { nome: "Porto de Aratu-Candeias (BA)", lat: -12.7350, lon: -38.4850 },
+    { nome: "Porto de Itaguaí (RJ)", lat: -22.9290, lon: -43.8340 },
+    { nome: "Porto de Belém / Vila do Conde (PA)", lat: -1.5050, lon: -48.7430 },
+    { nome: "Porto de Santarém (PA)", lat: -2.4378, lon: -54.7083 },
+    { nome: "Porto de Manaus (AM)", lat: -3.1333, lon: -60.0167 },
+    { nome: "Porto de Itacoatiara (AM)", lat: -3.1383, lon: -58.4436 }
+  ];
+
+  const portoContainer = document.getElementById('portoButtons');
+  const filtro = document.getElementById('filtroPorto');
+
+  if (filtro) {
+    filtro.addEventListener('input', () => {
+      const termo = filtro.value.toLowerCase();
+      Array.from(portoContainer.children).forEach(child => {
+        child.style.display = child.textContent.toLowerCase().includes(termo) ? 'block' : 'none';
+      });
+    });
+  }
+
+  portos.forEach(p => {
+    viewer.entities.add({
+      name: p.nome,
+      position: Cesium.Cartesian3.fromDegrees(p.lon, p.lat),
+      point: { pixelSize: 10, color: Cesium.Color.CYAN.withAlpha(0.95) },
+      label: { text: p.nome, pixelOffset: new Cesium.Cartesian2(0, -18), fillColor: Cesium.Color.WHITE, showBackground: true }
+    });
+
+    const btn = document.createElement('button');
+    btn.textContent = p.nome;
+    btn.style.cssText = 'background:#005eff;color:#fff;border:0;border-radius:8px;padding:4px 8px;margin:2px;font-size:11px;cursor:pointer;';
+    btn.onclick = () => viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(p.lon, p.lat, 50000) });
+    portoContainer.appendChild(btn);
+  });
+
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(-38.6, -5.0, 1600000)
+  });
+</script>

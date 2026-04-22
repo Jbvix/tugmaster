@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Rebocador Azimutal</title>
+    <!-- Tailwind CSS para estilização rápida -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonte do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+	<!--
+  © 2025 - Direitos Autorais Reservados. Desenvolvido por Jossian Costa de Brito.
+Este simulador é propriedade intelectual protegida por lei. A cópia, distribuição ou modificação sem autorização expressa é proibida.
+-->
+
+    <style>
+        /* Estilos globais para garantir que a aplicação ocupe toda a tela */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Evita barras de rolagem */
+            font-family: 'Roboto', sans-serif;
+            background-color: #111827; /* Fundo escuro */
+        }
+        /* Estilização base do canvas da simulação */
+        canvas {
+            background-color: #1f2937;
+            border-radius: 0.5rem;
+            border: 1px solid #4b5563;
+            cursor: default;
+            display: block;
+        }
+        /* Estilização do painel de Controle */
+        .control-panel, .sidebar {
+            background-color: #374151;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            border: 1px solid #4b5563;
+        }
+        /* Estilos base para os botões */
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border-width: 2px;
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .btn:disabled {
+            cursor: not-allowed;
+        }
+        /* Variações de cor para os botões */
+        .btn-blue { background-color: #3b82f6; border-color: #1d4ed8; color: white; }
+        .btn-blue:hover:not(:disabled) { background-color: #2563eb; }
+        .btn-red { background-color: #ef4444; border-color: #b91c1c; color: white; }
+        .btn-red:hover:not(:disabled) { background-color: #dc2626; }
+        .btn-orange { background-color: #f97316; border-color: #c2410c; color: white; }
+        .btn-orange:hover:not(:disabled) { background-color: #ea580c; }
+        .btn-green { background-color: #22c55e; border-color: #15803d; color: white; }
+        .btn-green:hover:not(:disabled) { background-color: #16a34a; }
+        .slider-label { color: #d1d5db; }
+        /* Estilização customizada para os sliders (barras de input) */
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 8px;
+            background: #4b5563; border-radius: 5px;
+            outline: none; opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 20px; height: 20px;
+            background: #3b82f6; cursor: pointer;
+            border-radius: 50%; border: 2px solid #1e3a8a;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px; height: 20px;
+            background: #3b82f6; cursor: pointer;
+            border-radius: 50%; border: 2px solid #1e3a8a;
+        }
+        /* (A) Estilos do Modal portados da V1 e mantidos para consistência visual */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #374151; padding: 2rem;
+            border-radius: 0.5rem; border: 1px solid #4b5563;
+            width: 90%; max-width: 500px;
+        }
+        /* Estilos para a nova barra lateral de manobras */
+        .maneuver-category > button {
+            background-color: #4b5563;
+            width: 100%;
+            text-align: left;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .maneuver-category > button:hover {
+            background-color: #6b7280;
+        }
+        .maneuver-buttons {
+            display: none; /* Escondido por defeito */
+            padding-left: 1rem;
+            margin-top: 0.5rem;
+            border-left: 2px solid #6b7280;
+        }
+        .maneuver-buttons.open {
+            display: block; /* Mostra quando a categoria está aberta */
+        }
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid #4b5563;
+        }
+        .maneuver-btn-wrapper {
+            position: relative;
+        }
+        .delete-btn-sidebar {
+            position: absolute;
+            top: 50%;
+            right: 0.5rem;
+            transform: translateY(-50%);
+            background-color: #ef4444;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 1px solid white;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <!-- Estrutura principal da página com 3 colunas: Sidebar, Canvas, Painel de Controle -->
+    <div class="grid grid-cols-1 lg:grid-cols-[288px_1fr_384px] h-full p-4 gap-4">
+        <!-- NOVA Barra Lateral de Manobras -->
+        <div id="maneuver-sidebar" class="sidebar text-white overflow-y-auto flex flex-col">
+            <!-- O conteúdo da barra lateral será gerado dinamicamente via JS -->
+        </div>
+
+        <!-- Container para o Canvas da simulação -->
+        <div id="canvas-container" class="flex items-center justify-center min-h-0 min-w-0">
+            <canvas id="simCanvas"></canvas>
+			<footer style="text-align:center; margin-top:20px; font-size:14px; color:#666; writing-mode: vertical-rl; transform: rotate(180deg);">
+  © 2025 - Direitos Autorais Reservados<br>
+  Desenvolvido por <strong>Jossian Costa de Brito</strong>
+</footer>
+
+        </div>
+
+        <!-- Painel de Controle (Manobras removidas) -->
+        <div class="control-panel text-white overflow-y-auto">
+            <h1 class="text-2xl font-bold mb-2 text-center">Painel de Controle</h1>
+            
+            <div class="text-center mb-4 p-2 bg-black/20 rounded-lg">
+                <h2 class="text-lg font-semibold text-gray-300">Velocidade</h2>
+                <p class="text-3xl font-mono text-cyan-400"><span id="speed-display">0.0</span> nós</p>
+            </div>
+
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold mb-2 text-center">Simulação</h2>
+                 <div class="flex space-x-2 mt-2">
+                     <button onclick="executeManeuver('Parada Normal')" class="btn btn-red w-full py-2 px-4 rounded-lg">Parada Normal</button>
+                     <button onclick="resetSimulator()" class="btn btn-orange w-full py-2 px-4 rounded-lg">Reset Posição</button>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold mb-2 text-center">Controle das Bóias</h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="add-green-buoy-btn" class="btn btn-green w-full py-2 px-4 rounded-lg">Add Verde</button>
+                    <button id="add-red-buoy-btn" class="btn btn-red w-full py-2 px-4 rounded-lg">Add Vermelha</button>
+                    <button id="edit-buoys-btn" class="btn btn-blue w-full py-2 px-4 rounded-lg">Editar Bóias</button>
+                    <button id="clear-buoys-btn" class="btn btn-orange w-full py-2 px-4 rounded-lg">Limpar Bóias</button>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold mb-2 text-center">Atracação</h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="moor-bow-btn" class="btn btn-green w-full py-2 px-4 rounded-lg disabled:opacity-50" disabled>Atracar Proa</button>
+                    <button id="moor-stern-btn" class="btn btn-green w-full py-2 px-4 rounded-lg disabled:opacity-50" disabled>Atracar Popa</button>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="text-lg font-semibold mb-2 text-center">Controle Manual</h2>
+                <div class="mb-4 p-4 bg-gray-800 rounded-lg">
+                    <h3 class="font-medium mb-2 text-center">Propulsor Boreste</h3>
+                    <div>
+                        <label for="p1_angle" class="slider-label">Ângulo do Jato: <span id="p1_angle_val">0</span>°</label>
+                        <input type="range" id="p1_angle" min="-180" max="180" value="0" class="w-full">
+                    </div>
+                    <div>
+                        <label for="p1_power" class="slider-label">Potência: <span id="p1_power_val">0</span>%</label>
+                        <input type="range" id="p1_power" min="0" max="100" value="0" class="w-full">
+                    </div>
+                </div>
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <h3 class="font-medium mb-2 text-center">Propulsor Bombordo</h3>
+                    <div>
+                        <label for="p2_angle" class="slider-label">Ângulo do Jato: <span id="p2_angle_val">0</span>°</label>
+                        <input type="range" id="p2_angle" min="-180" max="180" value="0" class="w-full">
+                    </div>
+                    <div>
+                        <label for="p2_power" class="slider-label">Potência: <span id="p2_power_val">0</span>%</label>
+                        <input type="range" id="p2_power" min="0" max="100" value="0" class="w-full">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- (B) Bloco único de HTML para o modal do editor de manobras -->
+    <div id="maneuver-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content text-white">
+            <h2 class="text-2xl font-bold mb-4">Criar Nova Manobra</h2>
+            <div class="mb-4">
+                <label for="maneuver-name" class="block mb-2">Nome da Manobra:</label>
+                <input type="text" id="maneuver-name" class="w-full p-2 rounded bg-gray-800 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <canvas id="editorCanvas" width="300" height="150" class="mx-auto bg-gray-900 rounded-md"></canvas>
+
+            <div class="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                    <h3 class="font-medium mb-2 text-center">Boreste</h3>
+                    <label class="slider-label">Ângulo do Jato: <span id="modal_p1_jet_angle_val">90</span>°</label>
+                    <input type="range" id="modal_p1_jet_angle" min="-180" max="180" value="90">
+                    <label class="slider-label mt-2">Potência: <span id="modal_p1_power_val">20</span>%</label>
+                    <input type="range" id="modal_p1_power" min="0" max="100" value="20">
+                </div>
+                <div>
+                    <h3 class="font-medium mb-2 text-center">Bombordo</h3>
+                    <label class="slider-label">Ângulo do Jato: <span id="modal_p2_jet_angle_val">-90</span>°</label>
+                    <input type="range" id="modal_p2_jet_angle" min="-180" max="180" value="-90">
+                    <label class="slider-label mt-2">Potência: <span id="modal_p2_power_val">20</span>%</label>
+                    <input type="range" id="modal_p2_power" min="0" max="100" value="20">
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-4 mt-6">
+                <button id="cancel-maneuver-btn" class="btn btn-red px-4 py-2 rounded-lg">Cancelar</button>
+                <button id="save-maneuver-btn" class="btn btn-blue px-4 py-2 rounded-lg">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    window.addEventListener('DOMContentLoaded', () => {
+        // --- INICIALIZAÇÃO E VARIÁVEIS GLOBAIS ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const speedDisplay = document.getElementById('speed-display');
+
+        let dragging = false;
+        let selectedBuoy = null;
+        let dragOffsetX, dragOffsetY;
+        let isBuoyEditMode = false;
+        let activeManeuverTimeouts = [];
+
+        let isBowMoored = false;
+        let isSternMoored = false;
+        let bowMooringBollard = null;
+        let sternMooringBollard = null;
+
+        const moorBowBtn = document.getElementById('moor-bow-btn');
+        const moorSternBtn = document.getElementById('moor-stern-btn');
+
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+            const rect = container.getBoundingClientRect();
+            const size = Math.min(rect.width, rect.height) * 0.95;
+            if (size > 0) {
+                canvas.width = size;
+                canvas.height = size;
+            }
+            if (typeof resetSimulator === 'function') {
+                resetSimulator();
+            }
+        }
+        
+        const degToRad = (deg) => deg * Math.PI / 180;
+        const radToDeg = (rad) => rad * 180 / Math.PI;
+
+        const initialTugState = {
+            x: 0, y: 0, width: 50, height: 100, angle: 0,
+            vx: 0, vy: 0, va: 0, mass: 2500, inertia: 2000000,
+            thrusters: [
+                { id: 1, x: 15, y: 35, jetAngle: degToRad(90), power: 20 }, 
+                { id: 2, x: -15, y: 35, jetAngle: degToRad(-90), power: 20 }
+            ]
+        };
+
+        let tug = {};
+        let buoys = [];
+        let pier = {};
+        
+        function setupScenario() {
+            const bollard1 = { x: canvas.width - 25, y: canvas.height / 2 - 100 };
+            const bollard2 = { x: canvas.width - 25, y: canvas.height / 2 + 100 };
+            
+            pier = {
+                x: canvas.width - 50,
+                y: canvas.height / 2 - 150,
+                width: 50,
+                height: 300,
+                bollards: [bollard1, bollard2],
+                mooringZone: {
+                    x: canvas.width - 80, 
+                    y: bollard1.y,
+                    width: 30,
+                    height: bollard2.y - bollard1.y
+                }
+            };
+            
+            buoys = [];
+        }
+        
+        const p1_angle_slider = document.getElementById('p1_angle');
+        const p1_power_slider = document.getElementById('p1_power');
+        const p2_angle_slider = document.getElementById('p2_angle');
+        const p2_power_slider = document.getElementById('p2_power');
+        const p1_angle_val = document.getElementById('p1_angle_val');
+        const p1_power_val = document.getElementById('p1_power_val');
+        const p2_angle_val = document.getElementById('p2_angle_val');
+        const p2_power_val = document.getElementById('p2_power_val');
+
+        p1_angle_slider.addEventListener('input', (e) => {
+            tug.thrusters[0].jetAngle = degToRad(parseFloat(e.target.value));
+            updateSliders();
+        });
+        p1_power_slider.addEventListener('input', (e) => {
+            tug.thrusters[0].power = parseFloat(e.target.value);
+            updateSliders();
+        });
+        p2_angle_slider.addEventListener('input', (e) => {
+            tug.thrusters[1].jetAngle = degToRad(parseFloat(e.target.value));
+            updateSliders();
+        });
+        p2_power_slider.addEventListener('input', (e) => {
+            tug.thrusters[1].power = parseFloat(e.target.value);
+            updateSliders();
+        });
+        
+        // --- SISTEMA DE MANOBRAS ---
+        const maneuvers = {
+            "Parada Normal": { descricao: "Idle seguro", passos: [{ t: 0, p1a: 90, p1p: 20, p2a: -90, p2p: 20 }], hold: 999, isCustom: false },
+            "Ahead 50%": { descricao: "Avante retilíneo ~6–7 kn (escala sim)", passos: [{ t: 0.0, p1a: 0, p1p: 20, p2a: 0, p2p: 20 }, { t: 2.0, p1a: 0, p1p: 50, p2a: 0, p2p: 50 }], hold: 999, isCustom: false },
+            "Ahead 80%": { descricao: "Avante mais rápido/empuxo alto", passos: [{ t: 0.0, p1a: 0, p1p: 20, p2a: 0, p2p: 20 }, { t: 1.5, p1a: 0, p1p: 80, p2a: 0, p2p: 80 }], hold: 999, isCustom: false },
+            "Astern 50%": { descricao: "Ré controlada", passos: [{ t: 0.0, p1a: 180, p1p: 20, p2a: 180, p2p: 20 }, { t: 2.0, p1a: 180, p1p: 50, p2a: 180, p2p: 50 }], hold: 999, isCustom: false },
+            "Twist Port (CCW)": { descricao: "Guinada no ponto a BE→BB (anti-horário)", passos: [{ t: 0.0, p1a: 45, p1p: 50, p2a: -135, p2p: 50 }, { t: 3.0, p1a: 45, p1p: 60, p2a: -135, p2p: 60 }], hold: 999, isCustom: false },
+            "Twist Stbd (CW)": { descricao: "Guinada no ponto a BB→BE (horário)", passos: [{ t: 0.0, p1a: 135, p1p: 50, p2a: -45, p2p: 50 }, { t: 3.0, p1a: 135, p1p: 60, p2a: -45, p2p: 60 }], hold: 999, isCustom: false },
+            "Crab → (Stbd)": { descricao: "Translação lateral p/ boreste", passos: [{ t: 0.0, p1a: -30, p1p: 40, p2a: -150, p2p: 40 }, { t: 2.0, p1a: -20, p1p: 55, p2a: -160, p2p: 55 }], hold: 999, isCustom: false },
+            "Crab ← (Port)": { descricao: "Translação lateral p/ bombordo", passos: [{ t: 0.0, p1a: 150, p1p: 40, p2a: 30, p2p: 40 }, { t: 2.0, p1a: 160, p1p: 55, p2a: 20, p2p: 55 }], hold: 999, isCustom: false },
+            "Oblique ↗︎ (Avante+Stbd)": { descricao: "Diagonal p/ vante a boreste", passos: [{ t: 0.0, p1a: -10, p1p: 45, p2a: 10, p2p: 55 }, { t: 3.0, p1a: -15, p1p: 55, p2a: 0, p2p: 65 }], hold: 999, isCustom: false },
+            "Oblique ↖︎ (Avante+Port)": { descricao: "Diagonal p/ vante a bombordo", passos: [{ t: 0.0, p1a: -10, p1p: 55, p2a: 10, p2p: 45 }, { t: 3.0, p1a: 0, p1p: 65, p2a: 15, p2p: 55 }], hold: 999, isCustom: false },
+            "Check Stop (frente→parado)": { descricao: "Checar headway e parar", passos: [{ t: 0.0, p1a: 180, p1p: 40, p2a: 180, p2p: 40 }, { t: 3.0, p1a: 180, p1p: 55, p2a: 180, p2p: 55 }, { t: 6.0, p1a: 90, p1p: 20, p2a: -90, p2p: 20 }], hold: 999, isCustom: false },
+            "Escort Lateral Port": { descricao: "Força lateral p/ BB em velocidade", passos: [{ t: 0.0, p1a: 120, p1p: 60, p2a: 60, p2p: 60 }, { t: 4.0, p1a: 135, p1p: 65, p2a: 45, p2p: 65 }], hold: 999, isCustom: false },
+            "Escort Lateral Stbd": { descricao: "Força lateral p/ BE em velocidade", passos: [{ t: 0.0, p1a: -60, p1p: 60, p2a: -120, p2p: 60 }, { t: 4.0, p1a: -45, p1p: 65, p2a: -135, p2p: 65 }], hold: 999, isCustom: false }
+        };
+
+        window.executeManeuver = function(name) {
+            const maneuver = maneuvers[name];
+            if (!maneuver) return;
+            activeManeuverTimeouts.forEach(clearTimeout);
+            activeManeuverTimeouts = [];
+            maneuver.passos.forEach(passo => {
+                const timeoutId = setTimeout(() => {
+                    tug.thrusters[0].jetAngle = degToRad(passo.p2a);
+                    tug.thrusters[0].power = passo.p2p;
+                    tug.thrusters[1].jetAngle = degToRad(passo.p1a);
+                    tug.thrusters[1].power = passo.p1p;
+                    updateSliders();
+                }, passo.t * 1000);
+                activeManeuverTimeouts.push(timeoutId);
+            });
+        }
+        
+        function updateSliders() {
+            if (!tug.thrusters) return;
+            p1_angle_slider.value = radToDeg(tug.thrusters[0].jetAngle);
+            p1_power_slider.value = tug.thrusters[0].power;
+            p2_angle_slider.value = radToDeg(tug.thrusters[1].jetAngle);
+            p2_power_slider.value = tug.thrusters[1].power;
+            p1_angle_val.textContent = Math.round(p1_angle_slider.value);
+            p1_power_val.textContent = Math.round(p1_power_slider.value);
+            p2_angle_val.textContent = Math.round(p2_angle_slider.value);
+            p2_power_val.textContent = Math.round(p2_power_slider.value);
+        }
+
+        window.resetSimulator = function() {
+            activeManeuverTimeouts.forEach(clearTimeout);
+            activeManeuverTimeouts = [];
+            tug = JSON.parse(JSON.stringify(initialTugState));
+            tug.x = canvas.width / 2;
+            tug.y = canvas.height / 2;
+            isBowMoored = false;
+            isSternMoored = false;
+            bowMooringBollard = null;
+            sternMooringBollard = null;
+            setupScenario();
+            updateMooringStatus();
+            executeManeuver('Parada Normal');
+        }
+
+        // --- LOOP PRINCIPAL DA SIMULAÇÃO ---
+        function update() {
+            if (!tug.thrusters) return;
+            updateMooringStatus();
+            let totalForceX = 0, totalForceY = 0, totalTorque = 0;
+            const maxForce = 25; 
+            tug.thrusters.forEach(thruster => {
+                const globalJetAngle = tug.angle + thruster.jetAngle;
+                const forceMagnitude = thruster.power / 100 * maxForce;
+                const forceX = Math.sin(globalJetAngle) * forceMagnitude;
+                const forceY = -Math.cos(globalJetAngle) * forceMagnitude;
+                totalForceX += forceX;
+                totalForceY += forceY;
+                const thrusterPosX = thruster.x * Math.cos(tug.angle) - thruster.y * Math.sin(tug.angle);
+                const thrusterPosY = thruster.x * Math.sin(tug.angle) + thruster.y * Math.cos(tug.angle);
+                totalTorque += thrusterPosX * forceY - thrusterPosY * forceX;
+            });
+            const linearDragCoeff = 5, lateralDragCoeff = 80, angularDragCoeff = 200000;
+            const localVx = tug.vx * Math.cos(-tug.angle) - tug.vy * Math.sin(-tug.angle);
+            const localVy = tug.vx * Math.sin(-tug.angle) + tug.vy * Math.cos(-tug.angle);
+            const dragForceX = (localVx * linearDragCoeff) * Math.cos(tug.angle) - (localVy * lateralDragCoeff) * Math.sin(tug.angle);
+            const dragForceY = (localVx * linearDragCoeff) * Math.sin(tug.angle) + (localVy * lateralDragCoeff) * Math.cos(tug.angle);
+            totalForceX -= dragForceX;
+            totalForceY -= dragForceY;
+            totalTorque -= tug.va * angularDragCoeff;
+            if (isBowMoored) {
+                const mooringForces = applyMooringConstraint('bow', bowMooringBollard);
+                totalForceX += mooringForces.force.x;
+                totalForceY += mooringForces.force.y;
+                totalTorque += mooringForces.torque;
+            }
+            if (isSternMoored) {
+                const mooringForces = applyMooringConstraint('stern', sternMooringBollard);
+                totalForceX += mooringForces.force.x;
+                totalForceY += mooringForces.force.y;
+                totalTorque += mooringForces.torque;
+            }
+            const ax = totalForceX / tug.mass, ay = totalForceY / tug.mass, aa = totalTorque / tug.inertia;
+            tug.vx += ax;
+            tug.vy += ay;
+            tug.va += aa;
+            handleCollisions();
+            tug.x += tug.vx;
+            tug.y += tug.vy;
+            tug.angle += tug.va;
+            buoys.forEach(buoy => {
+                if (buoy !== selectedBuoy) {
+                    const returnForce = 0.001;
+                    const dx = buoy.originalX - buoy.x;
+                    const dy = buoy.originalY - buoy.y;
+                    buoy.vx += dx * returnForce;
+                    buoy.vy += dy * returnForce;
+                }
+                buoy.x += buoy.vx;
+                buoy.y += buoy.vy;
+                buoy.vx *= 0.95;
+                buoy.vy *= 0.95;
+            });
+            if (tug.x > canvas.width + tug.height/2) tug.x = -tug.height/2;
+            if (tug.x < -tug.height/2) tug.x = canvas.width + tug.height/2;
+            if (tug.y > canvas.height + tug.height/2) tug.y = -tug.height/2;
+            if (tug.y < -tug.height/2) tug.y = canvas.height + tug.height/2;
+        }
+
+        function draw() {
+            if (!ctx || !tug.thrusters) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#845422';
+            ctx.fillRect(pier.x, pier.y, pier.width, pier.height);
+            ctx.fillStyle = '#444';
+            pier.bollards.forEach(b => {
+                ctx.fillRect(b.x - 5, b.y - 5, 10, 10);
+            });
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
+            ctx.fillRect(pier.mooringZone.x, pier.mooringZone.y, pier.mooringZone.width, pier.mooringZone.height);
+            buoys.forEach(buoy => {
+                ctx.beginPath();
+                ctx.arc(buoy.x, buoy.y, buoy.radius, 0, Math.PI * 2);
+                ctx.fillStyle = buoy.color;
+                ctx.fill();
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+            drawMooringLines();
+            ctx.save();
+            ctx.translate(tug.x, tug.y);
+            ctx.rotate(tug.angle);
+            const w = tug.width, h = tug.height, bowRadius = w / 2;
+            ctx.fillStyle = '#60a5fa';
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-w / 2, h / 2);
+            ctx.lineTo(w / 2, h / 2);
+            ctx.lineTo(w / 2, -h / 2 + bowRadius);
+            ctx.quadraticCurveTo(w / 2, -h / 2, w / 2 - bowRadius, -h / 2);
+            ctx.lineTo(-w / 2 + bowRadius, -h / 2);
+            ctx.quadraticCurveTo(-w / 2, -h / 2, -w / 2, -h / 2 + bowRadius);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, -h / 2);
+            ctx.lineTo(0, h/2);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            tug.thrusters.forEach(thruster => {
+                ctx.save();
+                ctx.translate(thruster.x, thruster.y);
+                drawThrusterVisuals(ctx, thruster.jetAngle, thruster.power);
+                ctx.restore();
+            });
+            ctx.restore();
+            const pixelSpeed = Math.sqrt(tug.vx * tug.vx + tug.vy * tug.vy);
+            const knotSpeed = pixelSpeed * 15;
+            speedDisplay.textContent = knotSpeed.toFixed(1);
+        }
+
+        function drawThrusterVisuals(context, jetAngle, power) {
+            context.save();
+            context.rotate(jetAngle);
+            context.fillStyle = '#facc15';
+            context.beginPath();
+            context.moveTo(0, -8); context.lineTo(8, -4); context.lineTo(5, 5);
+            context.lineTo(-5, 5); context.lineTo(-8, -4);
+            context.closePath();
+            context.fill();
+            if (power > 0) {
+                const jetLength = 10 + power * 0.3;
+                const jetWidth = 5 + power * 0.1;
+                context.beginPath();
+                context.moveTo(0, 5);
+                context.lineTo(-jetWidth, 5 + jetLength);
+                context.lineTo(jetWidth, 5 + jetLength);
+                context.closePath();
+                context.fillStyle = 'rgba(250, 204, 21, 0.7)';
+                context.fill();
+            }
+            context.restore();
+        }
+
+        // --- LÓGICA DE COLISÕES ---
+        function getTugVertices(tugObject) {
+            const w = tugObject.width;
+            const h = tugObject.height;
+            const angle = tugObject.angle;
+            const cosA = Math.cos(angle);
+            const sinA = Math.sin(angle);
+            const corners = [
+                {x: -w/2, y: -h/2}, {x: w/2, y: -h/2},
+                {x: w/2, y: h/2},  {x: -w/2, y: h/2}
+            ];
+            return corners.map(corner => ({
+                x: tugObject.x + (corner.x * cosA - corner.y * sinA),
+                y: tugObject.y + (corner.x * sinA + corner.y * cosA)
+            }));
+        }
+
+        function handleCollisions() {
+            const restitution = 0.5;
+            buoys.forEach(buoy => {
+                if (selectedBuoy === buoy) return;
+                const broadPhaseDist = Math.hypot(tug.x - buoy.x, tug.y - buoy.y);
+                if (broadPhaseDist > buoy.radius + tug.height) return;
+                const cosA = Math.cos(-tug.angle);
+                const sinA = Math.sin(-tug.angle);
+                const dx = buoy.x - tug.x;
+                const dy = buoy.y - tug.y;
+                const localBuoyX = dx * cosA - dy * sinA;
+                const localBuoyY = dx * sinA + dy * cosA;
+                const halfW = tug.width / 2;
+                const halfH = tug.height / 2;
+                const closestX = Math.max(-halfW, Math.min(localBuoyX, halfW));
+                const closestY = Math.max(-halfH, Math.min(localBuoyY, halfH));
+                const distToClosest = Math.hypot(localBuoyX - closestX, localBuoyY - closestY);
+                if (distToClosest < buoy.radius) {
+                    let normalLocalX = localBuoyX - closestX;
+                    let normalLocalY = localBuoyY - closestY;
+                    const len = Math.hypot(normalLocalX, normalLocalY);
+                    if (len === 0) { normalLocalX = 1; normalLocalY = 0; }
+                    else { normalLocalX /= len; normalLocalY /= len; }
+                    const worldCosA = Math.cos(tug.angle);
+                    const worldSinA = Math.sin(tug.angle);
+                    const normalWorldX = normalLocalX * worldCosA - normalLocalY * worldSinA;
+                    const normalWorldY = normalLocalX * worldSinA + normalLocalY * worldCosA;
+                    const overlap = buoy.radius - distToClosest;
+                    const massRatioTug = buoy.mass / (tug.mass + buoy.mass);
+                    const massRatioBuoy = tug.mass / (tug.mass + buoy.mass);
+                    tug.x -= normalWorldX * overlap * massRatioTug;
+                    tug.y -= normalWorldY * overlap * massRatioTug;
+                    buoy.x += normalWorldX * overlap * massRatioBuoy;
+                    buoy.y += normalWorldY * overlap * massRatioBuoy;
+                    const rTugX = (closestX * worldCosA - closestY * worldSinA);
+                    const rTugY = (closestX * worldSinA + closestY * worldCosA);
+                    const pointVelX = tug.vx + (-tug.va * rTugY);
+                    const pointVelY = tug.vy + (tug.va * rTugX);
+                    const rvX = buoy.vx - pointVelX;
+                    const rvY = buoy.vy - pointVelY;
+                    const velAlongNormal = rvX * normalWorldX + rvY * normalWorldY;
+                    if (velAlongNormal > 0) return;
+                    const invMassTug = 1 / tug.mass;
+                    const invMassBuoy = 1 / buoy.mass;
+                    const invInertiaTug = 1 / tug.inertia;
+                    const j = -(1 + restitution) * velAlongNormal / (invMassTug + invMassBuoy + (rTugX * normalWorldY - rTugY * normalWorldX)**2 * invInertiaTug);
+                    const impulseX = j * normalWorldX;
+                    const impulseY = j * normalWorldY;
+                    tug.vx -= impulseX * invMassTug;
+                    tug.vy -= impulseY * invMassTug;
+                    tug.va -= (rTugX * impulseY - rTugY * impulseX) * invInertiaTug;
+                    buoy.vx += impulseX * invMassBuoy;
+                    buoy.vy += impulseY * invMassBuoy;
+                }
+            });
+            for (let i = 0; i < buoys.length; i++) {
+                for (let j = i + 1; j < buoys.length; j++) {
+                    const b1 = buoys[i];
+                    const b2 = buoys[j];
+                    if (selectedBuoy === b1 || selectedBuoy === b2) continue;
+                    const dx = b2.x - b1.x;
+                    const dy = b2.y - b1.y;
+                    const dist = Math.hypot(dx, dy);
+                    const min_dist = b1.radius + b2.radius;
+                    if (dist < min_dist) {
+                        const angle = Math.atan2(dy, dx);
+                        const overlap = min_dist - dist;
+                        const moveX = overlap * Math.cos(angle);
+                        const moveY = overlap * Math.sin(angle);
+                        b1.x -= moveX * 0.5; b1.y -= moveY * 0.5;
+                        b2.x += moveX * 0.5; b2.y += moveY * 0.5;
+                        const totalMass = b1.mass + b2.mass;
+                        const b1_vx_new = (b1.vx * (b1.mass - b2.mass) + 2 * b2.mass * b2.vx) / totalMass;
+                        const b1_vy_new = (b1.vy * (b1.mass - b2.mass) + 2 * b2.mass * b2.vy) / totalMass;
+                        const b2_vx_new = (b2.vx * (b2.mass - b1.mass) + 2 * b1.mass * b1.vx) / totalMass;
+                        const b2_vy_new = (b2.vy * (b2.mass - b1.mass) + 2 * b1.mass * b1.vy) / totalMass;
+                        b1.vx = b1_vx_new * restitution; b1.vy = b1_vy_new * restitution;
+                        b2.vx = b2_vx_new * restitution; b2.vy = b2_vy_new * restitution;
+                    }
+                }
+            }
+            buoys.forEach(buoy => {
+                 if (selectedBuoy === buoy) return;
+                if (buoy.x + buoy.radius > pier.x && buoy.x - buoy.radius < pier.x + pier.width &&
+                    buoy.y + buoy.radius > pier.y && buoy.y - buoy.radius < pier.y + pier.height) {
+                    if (buoy.x + buoy.radius > pier.x && buoy.vx > 0) {
+                        buoy.x = pier.x - buoy.radius;
+                        buoy.vx *= -restitution; 
+                    }
+                }
+            });
+            const collisionInfo = checkTugPierCollision();
+            if (collisionInfo && collisionInfo.colliding) {
+                const pierRestitution = 0.4;
+                tug.x += collisionInfo.normal.x * collisionInfo.penetration;
+                tug.y += collisionInfo.normal.y * collisionInfo.penetration;
+                const rTugX = collisionInfo.collisionPoint.x - tug.x;
+                const rTugY = collisionInfo.collisionPoint.y - tug.y;
+                const pointVelX = tug.vx + (-tug.va * rTugY);
+                const pointVelY = tug.vy + (tug.va * rTugX);
+                const velAlongNormal = pointVelX * collisionInfo.normal.x + pointVelY * collisionInfo.normal.y;
+                if (velAlongNormal > 0) return;
+                const invMassTug = 1 / tug.mass;
+                const invInertiaTug = 1 / tug.inertia;
+                const crossRNormal = rTugX * collisionInfo.normal.y - rTugY * collisionInfo.normal.x;
+                const j = -(1 + pierRestitution) * velAlongNormal / (invMassTug + (crossRNormal * crossRNormal) * invInertiaTug);
+                const impulseX = j * collisionInfo.normal.x;
+                const impulseY = j * collisionInfo.normal.y;
+                tug.vx += impulseX * invMassTug;
+                tug.vy += impulseY * invMassTug;
+                tug.va += (rTugX * impulseY - rTugY * impulseX) * invInertiaTug;
+            }
+        }
+
+        function checkTugPierCollision() {
+            const tugVertices = getTugVertices(tug);
+            const pierVertices = [ {x: pier.x, y: pier.y}, {x: pier.x + pier.width, y: pier.y}, {x: pier.x + pier.width, y: pier.y + pier.height}, {x: pier.x, y: pier.y + pier.height} ];
+            const axes = [ { x: tugVertices[1].x - tugVertices[0].x, y: tugVertices[1].y - tugVertices[0].y }, { x: tugVertices[1].x - tugVertices[2].x, y: tugVertices[1].y - tugVertices[2].y }, { x: 1, y: 0 }, { x: 0, y: 1 } ];
+            let minOverlap = Infinity;
+            let collisionNormal = null;
+            for (const axis of axes) {
+                const len = Math.hypot(axis.x, axis.y);
+                const normalizedAxis = { x: axis.x / len, y: axis.y / len };
+                const proj1 = projectVertices(tugVertices, normalizedAxis);
+                const proj2 = projectVertices(pierVertices, normalizedAxis);
+                const overlap = Math.min(proj1.max, proj2.max) - Math.max(proj1.min, proj2.min);
+                if (overlap < 0) return null;
+                if (overlap < minOverlap) {
+                    minOverlap = overlap;
+                    collisionNormal = normalizedAxis;
+                }
+            }
+            const centerVec = { x: tug.x - (pier.x + pier.width / 2), y: tug.y - (pier.y + pier.height / 2) };
+            if (centerVec.x * collisionNormal.x + centerVec.y * collisionNormal.y < 0) {
+                collisionNormal.x *= -1;
+                collisionNormal.y *= -1;
+            }
+            let collisionPoint = getTugVertices(tug).reduce((closest, v) => { const d = (v.x - pier.x)**2; return d < closest.dist ? {dist: d, point: v} : closest; }, {dist: Infinity, point: null}).point;
+            return { colliding: true, normal: collisionNormal, penetration: minOverlap, collisionPoint: collisionPoint };
+        }
+
+        function projectVertices(vertices, axis) {
+            let min = Infinity, max = -Infinity;
+            for (const vertex of vertices) {
+                const proj = vertex.x * axis.x + vertex.y * axis.y;
+                if (proj < min) min = proj;
+                if (proj > max) max = proj;
+            }
+            return { min, max };
+        }
+
+        // --- LÓGICA DE ATRACAÇÃO ---
+        function getTugMooringPoint(part) {
+            const localX = tug.width / 2;
+            const localY = (part === 'bow') ? -tug.height / 2 + 20 : tug.height / 2 - 20;
+            const cosA = Math.cos(tug.angle);
+            const sinA = Math.sin(tug.angle);
+            return {
+                x: tug.x + (localX * cosA - localY * sinA),
+                y: tug.y + (localX * sinA + localY * cosA)
+            };
+        }
+        
+        function isPointInRect(point, rect) {
+            return point.x >= rect.x && point.x <= rect.x + rect.width &&
+                   point.y >= rect.y && point.y <= rect.y + rect.height;
+        }
+
+        function updateMooringStatus() {
+            const bowPoint = getTugMooringPoint('bow');
+            const sternPoint = getTugMooringPoint('stern');
+
+            const canMoorBow = isPointInRect(bowPoint, pier.mooringZone);
+            const canMoorStern = isPointInRect(sternPoint, pier.mooringZone);
+
+            moorBowBtn.disabled = !isBowMoored && !canMoorBow;
+            moorSternBtn.disabled = !isSternMoored && !canMoorStern;
+
+            moorBowBtn.textContent = isBowMoored ? 'Largar Proa' : 'Atracar Proa';
+            moorSternBtn.textContent = isSternMoored ? 'Largar Popa' : 'Atracar Popa';
+        }
+
+        function toggleMooring(part) {
+            if (part === 'bow') {
+                isBowMoored = !isBowMoored;
+                if (isBowMoored) {
+                    const bowPos = getTugMooringPoint('bow');
+                    const availableBollards = pier.bollards.filter(b => b !== sternMooringBollard);
+                    if (availableBollards.length > 0) {
+                        bowMooringBollard = availableBollards.reduce((prev, curr) => {
+                            const d1 = Math.hypot(bowPos.x - prev.x, bowPos.y - prev.y);
+                            const d2 = Math.hypot(bowPos.x - curr.x, bowPos.y - curr.y);
+                            return d1 < d2 ? prev : curr;
+                        });
+                    } else {
+                         bowMooringBollard = pier.bollards[0];
+                    }
+                } else {
+                    bowMooringBollard = null;
+                }
+            } else if (part === 'stern') {
+                isSternMoored = !isSternMoored;
+                if (isSternMoored) {
+                    const sternPos = getTugMooringPoint('stern');
+                    const availableBollards = pier.bollards.filter(b => b !== bowMooringBollard);
+                     if (availableBollards.length > 0) {
+                        sternMooringBollard = availableBollards.reduce((prev, curr) => {
+                            const d1 = Math.hypot(sternPos.x - prev.x, sternPos.y - prev.y);
+                            const d2 = Math.hypot(sternPos.x - curr.x, sternPos.y - curr.y);
+                            return d1 < d2 ? prev : curr;
+                        });
+                    } else {
+                        sternMooringBollard = pier.bollards[pier.bollards.length - 1];
+                    }
+                } else {
+                    sternMooringBollard = null;
+                }
+            }
+            updateMooringStatus();
+        }
+
+        function applyMooringConstraint(part, bollard) {
+            const k = 20;
+            const c = 40;
+            const maxMooringForce = 10;
+
+            const worldPos = getTugMooringPoint(part);
+            const r = { x: worldPos.x - tug.x, y: worldPos.y - tug.y };
+            const pointVel = { x: tug.vx - tug.va * r.y, y: tug.vy + tug.va * r.x };
+            const displacement = { x: bollard.x - worldPos.x, y: bollard.y - worldPos.y };
+            
+            const springForce = { x: displacement.x * k, y: displacement.y * k };
+            const dampingForce = { x: -pointVel.x * c, y: -pointVel.y * c };
+            
+            let totalForce = { x: springForce.x + dampingForce.x, y: springForce.y + dampingForce.y };
+
+            const forceMagnitude = Math.hypot(totalForce.x, totalForce.y);
+            if (forceMagnitude > maxMooringForce) {
+                totalForce.x = (totalForce.x / forceMagnitude) * maxMooringForce;
+                totalForce.y = (totalForce.y / forceMagnitude) * maxMooringForce;
+            }
+
+            const torque = r.x * totalForce.y - r.y * totalForce.x;
+            
+            return { force: totalForce, torque: torque };
+        }
+
+        function drawMooringLines() {
+            ctx.save();
+            ctx.strokeStyle = '#d1d5db';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([10, 5]);
+
+            if (isBowMoored && bowMooringBollard) {
+                const bowPos = getTugMooringPoint('bow');
+                ctx.beginPath();
+                ctx.moveTo(bowPos.x, bowPos.y);
+                ctx.lineTo(bowMooringBollard.x, bowMooringBollard.y);
+                ctx.stroke();
+            }
+            if (isSternMoored && sternMooringBollard) {
+                const sternPos = getTugMooringPoint('stern');
+                ctx.beginPath();
+                ctx.moveTo(sternPos.x, sternPos.y);
+                ctx.lineTo(sternMooringBollard.x, sternMooringBollard.y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        moorBowBtn.addEventListener('click', () => toggleMooring('bow'));
+        moorSternBtn.addEventListener('click', () => toggleMooring('stern'));
+
+        // --- LÓGICA DA BARRA LATERAL E EDITOR DE MANOBRAS ---
+        const maneuverSidebar = document.getElementById('maneuver-sidebar');
+        const modal = document.getElementById('maneuver-modal');
+        const editorCanvas = document.getElementById('editorCanvas');
+        const editorCtx = editorCanvas.getContext('2d');
+        const modal_p1_jet_angle = document.getElementById('modal_p1_jet_angle');
+        const modal_p1_power = document.getElementById('modal_p1_power');
+        const modal_p2_jet_angle = document.getElementById('modal_p2_jet_angle');
+        const modal_p2_power = document.getElementById('modal_p2_power');
+        const modal_p1_jet_angle_val = document.getElementById('modal_p1_jet_angle_val');
+        const modal_p1_power_val = document.getElementById('modal_p1_power_val');
+        const modal_p2_jet_angle_val = document.getElementById('modal_p2_jet_angle_val');
+        const modal_p2_power_val = document.getElementById('modal_p2_power_val');
+        let isDeleteMode = false;
+        
+        const maneuverCategories = {
+            "Avante": ["Ahead 50%", "Ahead 80%"],
+            "Ré": ["Astern 50%"],
+            "Giro (Twist)": ["Twist Port (CCW)", "Twist Stbd (CW)"],
+            "Lateral (Crabbing)": ["Crab → (Stbd)", "Crab ← (Port)"],
+            "Diagonal (Oblique)": ["Oblique ↗︎ (Avante+Stbd)", "Oblique ↖︎ (Avante+Port)"],
+            "Parada Rápida": ["Check Stop (frente→parado)"],
+            "Escolta": ["Escort Lateral Port", "Escort Lateral Stbd"]
+        };
+
+        function populateManeuverSidebar() {
+            maneuverSidebar.innerHTML = '<h1 class="text-2xl font-bold mb-4 text-center">Manobras</h1>';
+            
+            for (const category in maneuverCategories) {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'maneuver-category mb-2';
+                const categoryBtn = document.createElement('button');
+                categoryBtn.textContent = category;
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'maneuver-buttons space-y-2 py-2';
+                categoryBtn.onclick = () => buttonsDiv.classList.toggle('open');
+                maneuverCategories[category].forEach(maneuverName => {
+                    const maneuver = maneuvers[maneuverName];
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-blue w-full text-sm py-1 px-2 rounded';
+                    btn.textContent = maneuverName;
+                    btn.title = maneuver.descricao;
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        executeManeuver(maneuverName);
+                    };
+                    buttonsDiv.appendChild(btn);
+                });
+                categoryDiv.appendChild(categoryBtn);
+                categoryDiv.appendChild(buttonsDiv);
+                maneuverSidebar.appendChild(categoryDiv);
+            }
+
+            const customManeuvers = Object.keys(maneuvers).filter(name => maneuvers[name].isCustom);
+            if (customManeuvers.length > 0) {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'maneuver-category mb-2';
+                const categoryBtn = document.createElement('button');
+                categoryBtn.textContent = "Manobras Criadas";
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'maneuver-buttons space-y-2 py-2 open';
+                categoryBtn.onclick = () => buttonsDiv.classList.toggle('open');
+                customManeuvers.forEach(maneuverName => {
+                    const maneuver = maneuvers[maneuverName];
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'maneuver-btn-wrapper';
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-blue w-full text-sm py-1 px-2 rounded';
+                    btn.textContent = maneuverName;
+                    btn.title = maneuver.descricao;
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        executeManeuver(maneuverName);
+                    };
+                    wrapper.appendChild(btn);
+                    if (isDeleteMode) {
+                        const deleteBtn = document.createElement('div');
+                        deleteBtn.className = 'delete-btn-sidebar';
+                        deleteBtn.innerHTML = '&times;';
+                        deleteBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            delete maneuvers[maneuverName];
+                            populateManeuverSidebar();
+                        };
+                        wrapper.appendChild(deleteBtn);
+                    }
+                    buttonsDiv.appendChild(wrapper);
+                });
+                categoryDiv.appendChild(categoryBtn);
+                categoryDiv.appendChild(buttonsDiv);
+                maneuverSidebar.appendChild(categoryDiv);
+            }
+
+            const footer = document.createElement('div');
+            footer.className = 'sidebar-footer space-y-2';
+
+            const createBtn = document.createElement('button');
+            createBtn.className = 'btn btn-blue w-full py-2 px-4 rounded-lg';
+            createBtn.textContent = 'Criar Manobra';
+            // (C) Abertura do modal controlada via style.display
+            createBtn.addEventListener('click', () => {
+                modal.style.display = 'flex';
+                document.getElementById('maneuver-name').value = '';
+                drawEditor();
+            });
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn btn-orange w-full py-2 px-4 rounded-lg';
+            deleteBtn.textContent = isDeleteMode ? 'Concluir Edição' : 'Apagar Manobra';
+            if (isDeleteMode) {
+                deleteBtn.classList.replace('btn-orange', 'btn-red');
+            }
+            deleteBtn.addEventListener('click', () => {
+                isDeleteMode = !isDeleteMode;
+                populateManeuverSidebar();
+            });
+
+            footer.appendChild(createBtn);
+            footer.appendChild(deleteBtn);
+			// INCLUA O TRECHO ABAIXO:
+            const authorCredit = document.createElement('p');
+            authorCredit.className = 'text-center text-gray-400 text-sm mt-4';
+            authorCredit.textContent = 'Jossian Costa de Brito 2025';
+            footer.appendChild(authorCredit);
+            // FIM DO TRECHO A SER INCLUÍDO
+            maneuverSidebar.appendChild(footer);
+        }
+
+        function drawEditor() {
+            editorCtx.clearRect(0, 0, editorCanvas.width, editorCanvas.height);
+            editorCtx.save();
+            editorCtx.translate(editorCanvas.width / 2, editorCanvas.height / 2);
+            const w = 40, h = 80, bowRadius = w / 2;
+            editorCtx.fillStyle = '#2563eb';
+            editorCtx.beginPath();
+            editorCtx.moveTo(-w / 2, h / 2); editorCtx.lineTo(w / 2, h / 2);
+            editorCtx.lineTo(w / 2, -h / 2 + bowRadius);
+            editorCtx.quadraticCurveTo(w / 2, -h / 2, w / 2 - bowRadius, -h / 2);
+            editorCtx.lineTo(-w / 2 + bowRadius, -h / 2);
+            editorCtx.quadraticCurveTo(-w / 2, -h / 2, -w / 2, -h / 2 + bowRadius);
+            editorCtx.closePath();
+            editorCtx.fill();
+            editorCtx.save();
+            editorCtx.translate(12, 28);
+            drawThrusterVisuals(editorCtx, degToRad(modal_p1_jet_angle.value), modal_p1_power.value);
+            editorCtx.restore();
+            editorCtx.save();
+            editorCtx.translate(-12, 28);
+            drawThrusterVisuals(editorCtx, degToRad(modal_p2_jet_angle.value), modal_p2_power.value);
+            editorCtx.restore();
+            editorCtx.restore();
+        }
+        
+        // (D) Listeners que ligam os sliders do modal à atualização do preview (editorCanvas) em tempo real
+        [modal_p1_jet_angle, modal_p1_power, modal_p2_jet_angle, modal_p2_power].forEach(slider => {
+            slider.addEventListener('input', () => {
+                modal_p1_jet_angle_val.textContent = modal_p1_jet_angle.value;
+                modal_p1_power_val.textContent = modal_p1_power.value;
+                modal_p2_jet_angle_val.textContent = modal_p2_jet_angle.value;
+                modal_p2_power_val.textContent = modal_p2_power.value;
+                drawEditor();
+            });
+        });
+
+        document.getElementById('cancel-maneuver-btn').addEventListener('click', () => {
+            // (C) Fecho do modal controlado via style.display
+            modal.style.display = 'none';
+        });
+        document.getElementById('save-maneuver-btn').addEventListener('click', () => {
+            const name = document.getElementById('maneuver-name').value.trim();
+            if (!name || maneuvers[name]) {
+                console.error('Nome inválido ou já existente.');
+                return;
+            }
+            // (E) Salva a nova manobra num formato consistente com as pré-definidas (com array 'passos')
+            maneuvers[name] = {
+                descricao: "Manobra personalizada",
+                passos: [{
+                    t: 0,
+                    p1a: parseFloat(modal_p2_jet_angle.value),
+                    p1p: parseFloat(modal_p2_power.value),
+                    p2a: parseFloat(modal_p1_jet_angle.value),
+                    p2p: parseFloat(modal_p1_power.value)
+                }],
+                hold: 999,
+                isCustom: true
+            };
+            populateManeuverSidebar();
+            // (C) Fecho do modal controlado via style.display
+            modal.style.display = 'none';
+        });
+       
+        // --- LÓGICA DE Controle DAS BÓIAS ---
+        const addGreenBuoyBtn = document.getElementById('add-green-buoy-btn');
+        const addRedBuoyBtn = document.getElementById('add-red-buoy-btn');
+        const editBuoysBtn = document.getElementById('edit-buoys-btn');
+        const clearBuoysBtn = document.getElementById('clear-buoys-btn');
+        function addBuoy(color) {
+            buoys.push({ id: buoys.length, x: canvas.width/2, y: canvas.height/2, originalX: canvas.width/2, originalY: canvas.height/2, radius: 15, color: color, vx: 0, vy: 0, mass: 50 });
+        }
+        addGreenBuoyBtn.addEventListener('click', () => addBuoy('#22c55e'));
+        addRedBuoyBtn.addEventListener('click', () => addBuoy('#ef4444'));
+        clearBuoysBtn.addEventListener('click', () => { buoys = []; });
+        editBuoysBtn.addEventListener('click', () => {
+            isBuoyEditMode = !isBuoyEditMode;
+            editBuoysBtn.textContent = isBuoyEditMode ? 'Concluir Edição' : 'Editar Bóias';
+            editBuoysBtn.classList.toggle('btn-blue', !isBuoyEditMode);
+            editBuoysBtn.classList.toggle('btn-red', isBuoyEditMode);
+        });
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            for (let i = buoys.length - 1; i >= 0; i--) {
+                const buoy = buoys[i];
+                const dist = Math.hypot(mouseX - buoy.x, mouseY - buoy.y);
+                if (dist < buoy.radius) {
+                    if (isBuoyEditMode) { buoys.splice(i, 1); } 
+                    else { dragging = true; selectedBuoy = buoy; dragOffsetX = mouseX - buoy.x; dragOffsetY = mouseY - buoy.y; canvas.style.cursor = 'grabbing'; }
+                    return;
+                }
+            }
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            if (dragging && selectedBuoy) {
+                const rect = canvas.getBoundingClientRect();
+                selectedBuoy.x = e.clientX - rect.left - dragOffsetX;
+                selectedBuoy.y = e.clientY - rect.top - dragOffsetY;
+            }
+        });
+        canvas.addEventListener('mouseup', () => {
+             if (dragging && selectedBuoy) { selectedBuoy.originalX = selectedBuoy.x; selectedBuoy.originalY = selectedBuoy.y; }
+            dragging = false; selectedBuoy = null; canvas.style.cursor = 'default';
+        });
+         canvas.addEventListener('mouseleave', () => {
+            if (dragging && selectedBuoy) { selectedBuoy.originalX = selectedBuoy.x; selectedBuoy.originalY = selectedBuoy.y; }
+            dragging = false; selectedBuoy = null; canvas.style.cursor = 'default';
+        });
+
+        // --- INÍCIO DA APLICAÇÃO ---
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function initializeApp() {
+            resizeCanvas();
+            populateManeuverSidebar();
+            gameLoop();
+        }
+
+        window.addEventListener('load', initializeApp);
+        window.addEventListener('resize', resizeCanvas);
+        
+    });
+    </script>
+</body>
+</html>

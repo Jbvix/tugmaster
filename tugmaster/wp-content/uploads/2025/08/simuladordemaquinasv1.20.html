@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Praça de Máquinas v1.21</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        #logAcoes, #errorLog { max-height: 200px; overflow-y: auto; }
+        .progress-bar { height: 20px; background-color: #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .dark .progress-bar { background-color: #334155; } /* slate-700 */
+        .progress-fill { height: 100%; transition: width 0.5s ease-in-out;
+            background-image: linear-gradient(to right, #38bdf8, #0ea5e9); /* sky-400 to sky-500 */
+        }
+        .progress-fill-fuel {
+             background-image: linear-gradient(to right, #ca8a04, #a16207); /* yellow-600 to yellow-700 */
+        }
+        .status-on { color: #22c55e; font-weight: 600; } /* green-500 */
+        .status-off { color: #ef4444; font-weight: 600; } /* red-500 */
+        .action-btn { transition: all 0.2s ease-in-out; }
+        .action-btn:active { transform: scale(0.95); }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .modal-enter { animation: modalEnter 0.3s ease; }
+        .modal-exit { animation: modalExit 0.3s ease; }
+        details summary { cursor: pointer; transition: background-color 0.2s ease; border-radius: 0.5rem; padding: 0.5rem 1rem;}
+        details summary:hover { background-color: #f1f5f9; }
+        .dark details summary:hover { background-color: #334155; }
+        .selector-btn.active { background-color: #0ea5e9; border-color: #0284c7; } /* sky-500, sky-600 */
+        .pressure-ok { color: #22c55e; } /* green-500 */
+        .pressure-low { color: #ef4444; } /* red-500 */
+        .undo-highlight { background-color: #fefce8; transition: background-color 2s ease; }
+        @keyframes modalEnter { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes modalExit { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.9); } }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans transition-colors duration-300 dark:bg-slate-900 dark:text-slate-300" id="body">
+    <!-- SVG Icons Definition for re-use -->
+    <svg width="0" height="0" style="position:absolute;">
+        <symbol id="icon-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></symbol>
+        <symbol id="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></symbol>
+        <symbol id="icon-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M21 21v-5h-5"/></symbol>
+        <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+        <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></symbol>
+        <symbol id="icon-oil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a5 5 0 1 1 10 0 5.07 5.07 0 0 1-5 5Z"/><path d="M5.5 16.5a8.5 8.5 0 0 0 13 0"/><path d="M17 11V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4h-2Z"/><path d="M12 11h0"/></symbol>
+        <symbol id="icon-water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></symbol>
+        <symbol id="icon-stop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></symbol>
+        <symbol id="icon-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></symbol>
+        <symbol id="icon-plug-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/><path d="m2 2 20 20"/><path d="M14 2h-4"/></symbol>
+        <symbol id="icon-plug-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/><path d="M14 2h-4"/></symbol>
+        <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/></symbol>
+        <symbol id="icon-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></symbol>
+        <symbol id="icon-unlink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 2 20 20"/><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/></symbol>
+        <symbol id="icon-wind" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></symbol>
+        <symbol id="icon-cog" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 2v2"/><path d="M12 22v-2"/><path d="m17 7 1.4-1.4"/><path d="m6.4 18.4 1.4-1.4"/><path d="M22 12h-2"/><path d="M4 12H2"/><path d="m18.4 6.4-1.4 1.4"/><path d="m7 17-1.4 1.4"/></symbol>
+        <symbol id="icon-shower" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 4 2.5 2.5"/><path d="M13.5 6.5a4.5 4.5 0 1 1-6.37 6.36"/><path d="M2 22h20"/><path d="M6 22a2 2 0 0 0 2-2v-3"/><path d="M18 16a2 2 0 0 0-2 2v4"/><path d="M14 22a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2"/><path d="M10 22a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2"/><path d="m16.5 16.5 2.5 2.5"/><path d="m18 13-2.5 2.5"/><path d="m13.5 18.5 2.5 2.5"/></symbol>
+        <symbol id="icon-anchor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/><path d="M12 8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2 2 2 0 0 1 2 2v2a2 2 0 0 1-2 2Z"/></symbol>
+        <symbol id="icon-snowflake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><polyline points="20 4 4 20"/><polyline points="4 4 20 20"/></symbol>
+        <symbol id="icon-battery-charging" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/><path d="M6 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h1"/><path d="m11 7-3 5h4l-3 5"/><path d="M22 11v2"/></symbol>
+        <symbol id="icon-waves" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></symbol>
+        <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" x2="16.65" y1="21" y2="16.65"></line></symbol>
+        <symbol id="icon-ship" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M19.5 14.5A2.5 2.5 0 0 1 22 12V3H2v9a2.5 2.5 0 0 1 2.5 2.5"/><path d="M12 12V3"/><path d="M8 12V3"/><path d="M16 12V3"/></symbol>
+        <symbol id="icon-exchange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 3-3 3-3-3"/><path d="m15 21-3-3-3 3"/><path d="M12 6V18"/><path d="M3 9l3 3 3-3"/><path d="M3 15l3-3 3 3"/><path d="M9 12H21"/></symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></symbol>
+        <symbol id="icon-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></symbol>
+        <symbol id="icon-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></symbol>
+    </svg>
+
+    <div id="pauseOverlay" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex-col items-center justify-center text-white text-5xl font-bold z-40 hidden">
+        <svg width="80" height="80" class="mb-4"><use href="#icon-pause"/></svg>
+        PAUSADO
+    </div>
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header Controls -->
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                 <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-200">Simulador de Praça de Máquinas</h1>
+                 <p class="text-slate-500 dark:text-slate-400">Versão 1.21 Ano 2025 Jossian Brito</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                 <button id="pauseBtn" onclick="togglePause()" title="Pausar/Retomar" class="relative z-50 action-btn bg-sky-500 hover:bg-sky-600 text-white p-3 rounded-full shadow-lg"><svg width="24" height="24" class="stroke-current"><use href="#icon-pause"/></svg></button>
+                 <button onclick="resetSimulator()" title="Reiniciar Simulador" class="action-btn bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-full shadow-lg"><svg width="24" height="24" class="stroke-current"><use href="#icon-reset"/></svg></button>
+                 <button id="themeToggle" title="Alternar Tema" class="bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 p-3 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600 action-btn shadow-lg" aria-label="Alternar modo escuro"><svg width="24" height="24" class="stroke-current"><use href="#icon-moon"/></svg></button>
+            </div>
+        </div>
+
+        <!-- Simulation Stage Display -->
+        <div id="simulationStageDisplay" class="text-center text-xl font-bold text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-slate-800/50 p-4 rounded-xl mb-8 shadow-md">
+            PREPARAÇÃO DO REBOCADOR
+        </div>
+
+        <!-- Welcome Modal -->
+        <div id="welcomeModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-2xl max-w-lg w-full text-center modal-enter">
+                <h2 class="text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">Bem-vindo ao Simulador de Praça de Máquinas</h2>
+                <p class="mb-6 text-slate-600 dark:text-slate-300">
+                    Seu objetivo é preparar o rebocador para duas manobras consecutivas. Siga os procedimentos corretos de operação e segurança para desatracar, realizar a manobra, atracar e repetir o processo.
+                </p>
+                <button onclick="startSimulation()" class="w-full action-btn bg-green-500 hover:bg-green-600 text-white text-lg px-8 py-3 rounded-lg shadow-lg" style="aspect-ratio: auto;">Iniciar Simulação</button>
+            </div>
+        </div>
+
+        <!-- End Modal -->
+        <div id="endModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-2xl max-w-lg w-full text-center modal-enter">
+                <h2 class="text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">Simulação Concluída!</h2>
+                <p class="mb-6 text-slate-600 dark:text-slate-300">
+                    Você completou com sucesso as duas manobras e todas as tarefas obrigatórias.
+                </p>
+                <div class="flex space-x-4">
+                    <button onclick="resetSimulator()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white w-1/2 py-3 rounded-lg" style="aspect-ratio: auto;">Simular Novamente</button>
+                    <button onclick="exportarLog()" class="action-btn bg-indigo-500 hover:bg-indigo-600 text-white w-1/2 py-3 rounded-lg" style="aspect-ratio: auto;">Gerar Relatório</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Alertas -->
+        <div id="alertModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50" role="dialog" aria-labelledby="alertTitle" aria-modal="true">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg max-w-md w-full" id="modalContent">
+                <h3 id="alertTitle" class="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-200"></h3>
+                <p id="alertMessage" class="mb-4 text-slate-600 dark:text-slate-300"></p>
+                <button onclick="closeAlert()" class="w-full action-btn bg-sky-500 hover:bg-sky-600 text-white py-2 rounded-lg" style="aspect-ratio: auto;" aria-label="Fechar alerta">Fechar</button>
+            </div>
+        </div>
+
+        <!-- Layout de duas colunas -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            <!-- Coluna de Controles -->
+            <div class="space-y-6">
+                <details class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">DIESEL-GERADOR</summary>
+                    <div class="mt-4 space-y-4">
+                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-300">DG BB:</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Óleo Cárter: <span id="statusCarterDG-BB" class="text-sm font-semibold">0%</span></label>
+                                <div class="progress-bar"><div id="progressCarterDG-BB" class="progress-fill" style="width: 0%;"></div></div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Arrefecimento: <span id="statusLiquidoDG-BB" class="text-sm font-semibold">0%</span></label>
+                                <div class="progress-bar"><div id="progressLiquidoDG-BB" class="progress-fill" style="width: 0%;"></div></div>
+                            </div>
+                        </div>
+                        <div class="pressure-display text-center">P. Combustível: <span id="pressaoCombDG-BB">100%</span></div>
+                         <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mt-4">DG BE:</label>
+                        <div class="grid grid-cols-2 gap-4">
+                             <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Óleo Cárter: <span id="statusCarterDG-BE" class="text-sm font-semibold">0%</span></label>
+                                <div class="progress-bar"><div id="progressCarterDG-BE" class="progress-fill" style="width: 0%;"></div></div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Arrefecimento: <span id="statusLiquidoDG-BE" class="text-sm font-semibold">0%</span></label>
+                                <div class="progress-bar"><div id="progressLiquidoDG-BE" class="progress-fill" style="width: 0%;"></div></div>
+                            </div>
+                        </div>
+                        <div class="pressure-display text-center">P. Combustível: <span id="pressaoCombDG-BE">100%</span></div>
+                        <div class="flex justify-center space-x-4 pt-2">
+                            <button id="btnGeradorBB" onclick="selectEquipment('gerador', 'BB')" class="selector-btn w-1/2 bg-slate-400 hover:bg-slate-500 text-white font-semibold py-2 rounded-lg">DG BB</button>
+                            <button id="btnGeradorBE" onclick="selectEquipment('gerador', 'BE')" class="selector-btn w-1/2 bg-slate-400 hover:bg-slate-500 text-white font-semibold py-2 rounded-lg">DG BE</button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3 pt-2">
+                            <button onclick="verificarNiveis('gerador')" class="action-btn bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg p-3" title="Verificar Níveis"><svg width="24" height="24" class="stroke-current"><use href="#icon-check"/></svg></button>
+                            <button onclick="complementarCarter('gerador')" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Completar Óleo Cárter"><svg width="24" height="24" class="stroke-current"><use href="#icon-oil"/></svg></button>
+                            <button onclick="complementarLiquidoArrefecimento('gerador')" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Completar Arrefecimento"><svg width="24" height="24" class="stroke-current"><use href="#icon-water"/></svg></button>
+                            <button id="btnPartirGerador" onclick="partirGerador()" class="action-btn bg-green-500 hover:bg-green-600 text-white rounded-lg p-3" title="Partir Gerador"><svg width="24" height="24" class="stroke-current"><use href="#icon-play"/></svg></button>
+                            <button id="btnDesligarGerador" onclick="desligarGerador()" class="action-btn bg-red-500 hover:bg-red-600 text-white rounded-lg p-3" title="Desligar Gerador"><svg width="24" height="24" class="stroke-current"><use href="#icon-stop"/></svg></button>
+                            <button onclick="trocarFiltros('gerador')" class="action-btn bg-amber-500 hover:bg-amber-600 text-white rounded-lg p-3" title="Trocar Filtros"><svg width="24" height="24" class="stroke-current"><use href="#icon-filter"/></svg></button>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Quadro Elétrico Principal (QEP)</summary>
+                    <div class="mt-4 grid grid-cols-3 gap-3">
+                        <button id="btnDesligarLuzTerra" onclick="desligarLuzTerra()" class="action-btn bg-red-500 hover:bg-red-600 text-white rounded-lg p-3" title="Desligar Luz de Terra"><svg width="24" height="24" class="stroke-current"><use href="#icon-plug-off"/></svg></button>
+                        <button id="btnLigarLuzTerra" onclick="ligarLuzTerra()" class="action-btn bg-green-500 hover:bg-green-600 text-white rounded-lg p-3" title="Ligar Luz de Terra"><svg width="24" height="24" class="stroke-current"><use href="#icon-plug-on"/></svg></button>
+                        <button id="btnConectarLuzTerra" onclick="conectarLuzTerra()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Conectar Luz de Terra"><svg width="24" height="24" class="stroke-current"><use href="#icon-link"/></svg></button>
+                        <button id="btnAlimentacaoGerador" onclick="acionarAlimentacaoGerador()" class="action-btn bg-green-500 hover:bg-green-600 text-white rounded-lg p-3" title="Alimentação do Gerador"><svg width="24" height="24" class="stroke-current"><use href="#icon-zap"/></svg></button>
+                        <button id="btnDesconectarCaboRebocador" onclick="desconectarCabo()" class="action-btn bg-red-500 hover:bg-red-600 text-white rounded-lg p-3" title="Desconectar Cabo"><svg width="24" height="24" class="stroke-current"><use href="#icon-unlink"/></svg></button>
+                        <button id="btnConectarCaboRebocador" onclick="conectarCabo()" class="action-btn bg-green-500 hover:bg-green-600 text-white rounded-lg p-3" title="Conectar Cabo"><svg width="24" height="24" class="stroke-current"><use href="#icon-link"/></svg></button>
+                    </div>
+                </details>
+
+                <details class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Praça de Máquinas</summary>
+                    <div class="mt-4 grid grid-cols-3 gap-3">
+                        <button id="btnVentilacao" onclick="toggleVentilacao()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Ventilação"><svg width="24" height="24" class="stroke-current"><use href="#icon-wind"/></svg></button>
+                        <button id="btnCompressores" onclick="toggleCompressores()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Compressores"><svg width="24" height="24" class="stroke-current"><use href="#icon-cog"/></svg></button>
+                        <button onclick="purgarReservatorios()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Purgar Reservatórios"><svg width="24" height="24" class="stroke-current"><use href="#icon-shower"/></svg></button>
+                        <button id="btnBombasHidroforicas" onclick="toggleBombasHidroforicas()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Bombas Hidrofóricas"><svg width="24" height="24" class="stroke-current"><use href="#icon-water"/></svg></button>
+                        <button id="btnEnergizarGuincho" onclick="energizarGuincho()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white col-span-3 rounded-lg p-3" title="Energizar Guincho"><svg width="24" height="24" class="stroke-current"><use href="#icon-anchor"/></svg></button>
+                    </div>
+                </details>
+                
+                <details class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Motores Principais</summary>
+                    <div class="mt-4 space-y-4">
+                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-300">MCP BB:</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Óleo Cárter: <span id="statusCarterMCP-BB" class="text-sm font-semibold">0%</span></label>
+                                <div class="progress-bar"><div id="progressCarterMCP-BB" class="progress-fill" style="width: 0%;"></div></div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Arrefecimento: <span id="statusLiquidoMCP-BB" class="text-sm font-semibold">0%</span></label>
+                                <div class="progress-bar"><div id="progressLiquidoMCP-BB" class="progress-fill" style="width: 0%;"></div></div>
+                            </div>
+                        </div>
+                        <div class="pressure-display text-center">P. Combustível: <span id="pressaoCombMCP-BB">100%</span></div>
+                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mt-4">MCP BE:</label>
+                        <div class="grid grid-cols-2 gap-4">
+                             <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Óleo Cárter: <span id="statusCarterMCP-BE" class="text-sm font-semibold">0%</span></label>
+                                <div class="progress-bar"><div id="progressCarterMCP-BE" class="progress-fill" style="width: 0%;"></div></div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Arrefecimento: <span id="statusLiquidoMCP-BE" class="text-sm font-semibold">0%</span></label>
+                                <div class="progress-bar"><div id="progressLiquidoMCP-BE" class="progress-fill" style="width: 0%;"></div></div>
+                            </div>
+                        </div>
+                        <div class="pressure-display text-center">P. Combustível: <span id="pressaoCombMCP-BE">100%</span></div>
+                        <div class="flex justify-center space-x-4 pt-2">
+                            <button id="btnMotorBB" onclick="selectEquipment('motor', 'BB')" class="selector-btn w-1/2 bg-slate-400 hover:bg-slate-500 text-white font-semibold py-2 rounded-lg">MCP BB</button>
+                            <button id="btnMotorBE" onclick="selectEquipment('motor', 'BE')" class="selector-btn w-1/2 bg-slate-400 hover:bg-slate-500 text-white font-semibold py-2 rounded-lg">MCP BE</button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3 pt-2">
+                            <button onclick="verificarNiveis('motores')" class="action-btn bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg p-3" title="Verificar Níveis"><svg width="24" height="24" class="stroke-current"><use href="#icon-check"/></svg></button>
+                            <button onclick="complementarCarter('motores')" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Completar Óleo Cárter"><svg width="24" height="24" class="stroke-current"><use href="#icon-oil"/></svg></button>
+                            <button onclick="complementarLiquidoArrefecimento('motores')" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Completar Arrefecimento"><svg width="24" height="24" class="stroke-current"><use href="#icon-water"/></svg></button>
+                            <button id="btnPartirMotores" onclick="partirMotores()" class="action-btn bg-green-500 hover:bg-green-600 text-white rounded-lg p-3" title="Partir Motores"><svg width="24" height="24" class="stroke-current"><use href="#icon-play"/></svg></button>
+                            <button id="btnPararMotores" onclick="pararMotores()" class="action-btn bg-red-500 hover:bg-red-600 text-white rounded-lg p-3" title="Parar Motores"><svg width="24" height="24" class="stroke-current"><use href="#icon-stop"/></svg></button>
+                            <button onclick="trocarFiltros('motores')" class="action-btn bg-amber-500 hover:bg-amber-600 text-white rounded-lg p-3" title="Trocar Filtros"><svg width="24" height="24" class="stroke-current"><use href="#icon-filter"/></svg></button>
+                            <button id="btnPassarComando" onclick="passarComandoPassadico()" class="action-btn bg-green-500 hover:bg-green-600 text-white col-span-3 rounded-lg p-3" title="Passar Comando ao Passadiço"><svg width="24" height="24" class="stroke-current"><use href="#icon-ship"/></svg></button>
+                        </div>
+                    </div>
+                </details>
+                
+                <details class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Pré-partida</summary>
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                        <button onclick="verificarPropulsor('BB')" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Verificar Propulsor BB"><svg width="24" height="24" class="stroke-current mr-2"><use href="#icon-cog"/></svg> BB</button>
+                        <button onclick="verificarPropulsor('BE')" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Verificar Propulsor BE"><svg width="24" height="24" class="stroke-current mr-2"><use href="#icon-cog"/></svg> BE</button>
+                        <button id="btnBombasRefrigeracao" onclick="toggleBombasRefrigeracao()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white col-span-2 rounded-lg p-3" title="Ligar Bombas Refrigeração"><svg width="24" height="24" class="stroke-current"><use href="#icon-snowflake"/></svg></button>
+                    </div>
+                </details>
+
+                <details class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Alimentação 24V</summary>
+                     <div class="mt-4 grid grid-cols-2 gap-3">
+                        <button onclick="toggleCarregador()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Ligar/Desligar Carregador"><svg width="24" height="24" class="stroke-current"><use href="#icon-battery-charging"/></svg></button>
+                        <button onclick="toggleModoCarregador()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Alternar Modo Carregador"><svg width="24" height="24" class="stroke-current"><use href="#icon-waves"/></svg></button>
+                        <button onclick="inspecionarBaterias()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Inspecionar Baterias"><svg width="24" height="24" class="stroke-current"><use href="#icon-search"/></svg></button>
+                        <button onclick="interligarBaterias()" class="action-btn bg-amber-500 hover:bg-amber-600 text-white rounded-lg p-3" title="Interligar Bancos de Bateria"><svg width="24" height="24" class="stroke-current"><use href="#icon-link"/></svg></button>
+                    </div>
+                </details>
+
+                <details class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Guincho de Proa</summary>
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                        <button id="btnTestarGuinchoAV" onclick="testarGuincho('AV')" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Testar guincho (AV)"><svg width="24" height="24" class="stroke-current mr-2"><use href="#icon-anchor"/></svg> AV</button>
+                        <button id="btnTestarGuinchoAR" onclick="testarGuincho('AR')" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Testar guincho (AR)"><svg width="24" height="24" class="stroke-current mr-2"><use href="#icon-anchor"/></svg> AR</button>
+                    </div>
+                </details>
+                
+                <details class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Transferência de Diesel</summary>
+                    <div class="mt-4 space-y-3">
+                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-300">Tanque de Origem:</label>
+                        <select id="tanqueOrigemSelect" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 bg-slate-50 dark:bg-slate-700 dark:text-slate-200" aria-label="Selecionar tanque de origem">
+                            <option value="">Selecionar Tanque</option>
+                            <option value="duploFundoBB">Tanque Duplo Fundo BB</option>
+                            <option value="duploFundoBE">Tanque Duplo Fundo BE</option>
+                            <option value="central">Tanque Central</option>
+                        </select>
+                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mt-4">Tanque de Destino:</label>
+                        <select id="tanqueDestinoSelect" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 bg-slate-50 dark:bg-slate-700 dark:text-slate-200" aria-label="Selecionar tanque de destino">
+                            <option value="">Selecionar Tanque</option>
+                            <option value="servicoBB">Tanque de Serviço BB</option>
+                            <option value="servicoBE">Tanque de Serviço BE</option>
+                            <option value="servicoBBBE">Tanques de Serviço BB/BE</option>
+                        </select>
+                        <div class="grid grid-cols-2 gap-3 pt-2">
+                            <button onclick="iniciarTransferencia()" class="action-btn bg-green-500 hover:bg-green-600 text-white rounded-lg p-3" title="Iniciar Purificador"><svg width="24" height="24" class="stroke-current"><use href="#icon-play"/></svg></button>
+                            <button onclick="pararTransferencia()" class="action-btn bg-red-500 hover:bg-red-600 text-white rounded-lg p-3" title="Parar Purificador"><svg width="24" height="24" class="stroke-current"><use href="#icon-stop"/></svg></button>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Recebimento de Óleo</summary>
+                    <div class="mt-4 space-y-3">
+                         <h4 class="text-base font-semibold text-slate-700 dark:text-slate-200">Tanques do Caminhão</h4>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="progress-bar"><div id="progressCaminhaoTanque1" class="progress-fill progress-fill-fuel" style="width: 100%;"></div></div>
+                            <div class="progress-bar"><div id="progressCaminhaoTanque2" class="progress-fill progress-fill-fuel" style="width: 100%;"></div></div>
+                            <div class="progress-bar"><div id="progressCaminhaoTanque3" class="progress-fill progress-fill-fuel" style="width: 100%;"></div></div>
+                            <div class="progress-bar"><div id="progressCaminhaoTanque4" class="progress-fill progress-fill-fuel" style="width: 100%;"></div></div>
+                            <div class="progress-bar"><div id="progressCaminhaoTanque5" class="progress-fill progress-fill-fuel" style="width: 100%;"></div></div>
+                            <div class="progress-bar"><div id="progressCaminhaoTanque6" class="progress-fill progress-fill-fuel" style="width: 100%;"></div></div>
+                        </div>
+                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-300">Tanque de Destino:</label>
+                        <select id="recebimentoTanqueSelect" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 bg-slate-50 dark:bg-slate-700 dark:text-slate-200" aria-label="Selecionar tanque para recebimento">
+                            <option value="">Selecionar Tanque</option>
+                            <option value="duploFundoBB">Tanque Duplo Fundo BB</option>
+                            <option value="duploFundoBE">Tanque Duplo Fundo BE</option>
+                            <option value="central">Tanque Central</option>
+                        </select>
+                         <div class="grid grid-cols-2 gap-3 pt-2">
+                            <button onclick="iniciarRecebimento()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Iniciar Recebimento"><svg width="24" height="24" class="stroke-current"><use href="#icon-play"/></svg></button>
+                            <button onclick="pararRecebimento()" class="action-btn bg-red-500 hover:bg-red-600 text-white rounded-lg p-3" title="Parar Recebimento"><svg width="24" height="24" class="stroke-current"><use href="#icon-stop"/></svg></button>
+                        </div>
+                    </div>
+                </details>
+                
+                <details class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Válvula de Comunicação</summary>
+                    <div class="mt-4">
+                        <button id="valvulaComunicaoBtn" onclick="toggleValvulaComunicacao()" class="w-full action-btn bg-slate-500 hover:bg-slate-600 text-white rounded-lg p-3" title="Válvula de Comunicação"><svg width="24" height="24" class="stroke-current"><use href="#icon-exchange"/></svg></button>
+                    </div>
+                </details>
+
+                <details class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Transferência de Água</summary>
+                    <div class="mt-4 space-y-3">
+                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-300">Fonte de Água:</label>
+                        <select id="fonteAguaSelect" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 bg-slate-50 dark:bg-slate-700 dark:text-slate-200" aria-label="Selecionar fonte de água">
+                            <option value="">Selecionar Fonte</option>
+                            <option value="tanquePotavel">Tanque de Água Potável</option>
+                            <option value="porto">Água do Porto</option>
+                        </select>
+                        <div class="grid grid-cols-2 gap-3 pt-2">
+                            <button id="btnTransferirAgua" onclick="iniciarTransferenciaAgua()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white rounded-lg p-3" title="Iniciar transferência de água"><svg width="24" height="24" class="stroke-current"><use href="#icon-play"/></svg></button>
+                            <button id="btnPararTransferenciaAgua" onclick="pararTransferenciaAgua()" class="action-btn bg-red-500 hover:bg-red-600 text-white rounded-lg p-3" title="Parar transferência de água"><svg width="24" height="24" class="stroke-current"><use href="#icon-stop"/></svg></button>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <!-- Coluna de Status e Logs -->
+            <div class="space-y-6">
+                <details class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Status do Sistema</summary>
+                    <ul class="mt-4 space-y-3 text-sm sm:text-base text-slate-600 dark:text-slate-400">
+                        <li class="flex justify-between items-center"><span>DIESEL-GERADOR:</span> <span id="statusGerador" class="status-off">Desligado</span></li>
+                        <li class="flex justify-between items-center"><span>Luz de Terra:</span> <span id="statusLuzTerra" class="status-on">Ligada</span></li>
+                        <li class="flex justify-between items-center"><span>Alimentação DIESEL-GERADOR:</span> <span id="statusAlimentacaoGerador" class="status-off">Desligada</span></li>
+                        <li class="flex justify-between items-center"><span>Ventilação:</span> <span id="statusVentilacao" class="status-off">Desligada</span></li>
+                        <li class="flex justify-between items-center"><span>Compressores:</span> <span id="statusCompressores" class="status-off">Desligados</span></li>
+                        <li class="flex justify-between items-center"><span>Bombas Hidrofóricas:</span> <span id="statusBombasHidroforicas" class="status-off">Desligadas</span></li>
+                        <li class="flex justify-between items-center"><span>Bombas de Refrigeração:</span> <span id="statusBombasRefrigeracao" class="status-off">Desligadas</span></li>
+                        <li class="flex justify-between items-center"><span>Guincho de Proa:</span> <span id="statusGuinchoProa" class="status-off">Desenergizado</span></li>
+                        <li class="flex justify-between items-center"><span>Motores:</span> <span id="statusMotores" class="status-off">Desligados</span></li>
+                        <li class="flex justify-between items-center"><span>Comando:</span> <span id="statusComando" class="status-off">Na Praça</span></li>
+                        <li class="flex justify-between items-center"><span>Guincho Teste:</span> <span id="statusGuinchoTeste" class="status-off">Não Testado</span></li>
+                        <li class="flex justify-between items-center"><span>Cabo do Rebocador:</span> <span id="statusCaboRebocador" class="status-on">Conectado</span></li>
+                        <li class="flex justify-between items-center"><span>Válvula de Comunicação:</span> <span id="statusValvulaComunicao" class="status-off">Fechada</span></li>
+                        <li class="flex justify-between items-center"><span>Propulsor BB:</span> <span id="statusPropulsorBB" class="status-off">Não Verificado</span></li>
+                        <li class="flex justify-between items-center"><span>Propulsor BE:</span> <span id="statusPropulsorBE" class="status-off">Não Verificado</span></li>
+                        <li class="flex justify-between items-center"><span>Carregador de Baterias:</span> <span id="statusCarregadorBaterias" class="status-off">Desligado</span></li>
+                        <li class="flex justify-between items-center"><span>Modo do Carregador:</span> <span id="statusModoCarregador" class="status-off">Manual</span></li>
+                        <li class="flex justify-between items-center"><span>Baterias BB:</span> <span id="statusBateriasBB" class="status-off">Normal (24.0V)</span></li>
+                        <li class="flex justify-between items-center"><span>Baterias BE:</span> <span id="statusBateriasBE" class="status-off">Normal (24.0V)</span></li>
+                        <li class="flex justify-between items-center"><span>Interligação de Baterias:</span> <span id="statusInterligacao" class="status-off">Desativada</span></li>
+                    </ul>
+                </details>
+
+                <details class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Níveis de Óleo Diesel</summary>
+                     <ul class="mt-4 space-y-4 text-sm sm:text-base text-slate-600 dark:text-slate-400">
+                        <li>
+                            <div class="flex justify-between mb-1"><span class="font-medium">Tanque de Serviço BB</span><span id="statusTanqueServicoBB">50%</span></div>
+                            <div class="progress-bar"><div id="progressTanqueServicoBB" class="progress-fill progress-fill-fuel" style="width: 50%;"></div></div>
+                        </li>
+                        <li>
+                            <div class="flex justify-between mb-1"><span class="font-medium">Tanque de Serviço BE</span><span id="statusTanqueServicoBE">50%</span></div>
+                            <div class="progress-bar"><div id="progressTanqueServicoBE" class="progress-fill progress-fill-fuel" style="width: 50%;"></div></div>
+                        </li>
+                        <li>
+                            <div class="flex justify-between mb-1"><span class="font-medium">Tanque Duplo Fundo BB</span><span id="statusTanqueFundoBB">90%</span></div>
+                            <div class="progress-bar"><div id="progressTanqueFundoBB" class="progress-fill progress-fill-fuel" style="width: 90%;"></div></div>
+                        </li>
+                        <li>
+                            <div class="flex justify-between mb-1"><span class="font-medium">Tanque Duplo Fundo BE</span><span id="statusTanqueFundoBE">90%</span></div>
+                            <div class="progress-bar"><div id="progressTanqueFundoBE" class="progress-fill progress-fill-fuel" style="width: 90%;"></div></div>
+                        </li>
+                        <li>
+                            <div class="flex justify-between mb-1"><span class="font-medium">Tanque Central</span><span id="statusTanqueCentral">90%</span></div>
+                            <div class="progress-bar"><div id="progressTanqueCentral" class="progress-fill progress-fill-fuel" style="width: 90%;"></div></div>
+                        </li>
+                    </ul>
+                </details>
+
+                <details class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg" open>
+                    <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 tracking-wider">Níveis de Fluidos</summary>
+                    <ul class="mt-4 space-y-4 text-sm sm:text-base text-slate-600 dark:text-slate-400">
+                         <li>
+                            <div class="flex justify-between mb-1"><span class="font-medium">Tanque de Óleo Lubrificante</span><span id="statusTanqueLubrificante">100%</span></div>
+                            <div class="progress-bar"><div id="progressTanqueLubrificante" class="progress-fill" style="width: 100%;"></div></div>
+                        </li>
+                        <li class="flex justify-between items-center"><span>Estoque de Bombonas (DG):</span> <span id="statusBombonas" class="font-semibold">10</span></li>
+                        <li class="flex justify-between items-center"><span>Estoque de Tambores (MCP):</span> <span id="statusTambores" class="font-semibold">9</span></li>
+                        <li>
+                            <div class="flex justify-between mb-1"><span class="font-medium">Tanque de Água Potável</span><span id="statusTanqueAguaPotavel">90%</span></div>
+                            <div class="progress-bar"><div id="progressTanqueAguaPotavel" class="progress-fill" style="width: 90%;"></div></div>
+                        </li>
+                        <li>
+                            <div class="flex justify-between mb-1"><span class="font-medium">Tanque de Água de Proa</span><span id="statusTanqueAguaProa">60%</span></div>
+                            <div class="progress-bar"><div id="progressTanqueAguaProa" class="progress-fill" style="width: 60%;"></div></div>
+                        </li>
+                    </ul>
+                </details>
+
+                <!-- Log de Ações -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-2 sm:mb-0 tracking-wider">Log de Ações</h2>
+                        <div class="flex space-x-2">
+                            <button onclick="undoAction()" class="action-btn bg-amber-500 hover:bg-amber-600 text-white p-2 rounded-lg" title="Desfazer Ação"><svg width="20" height="20" class="stroke-current"><use href="#icon-undo"/></svg></button>
+                            <button onclick="limparLog()" class="action-btn bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg" title="Limpar Log"><svg width="20" height="20" class="stroke-current"><use href="#icon-trash"/></svg></button>
+                            <button onclick="exportarLog()" class="action-btn bg-sky-500 hover:bg-sky-600 text-white p-2 rounded-lg" title="Exportar Log"><svg width="20" height="20" class="stroke-current"><use href="#icon-file"/></svg></button>
+                        </div>
+                    </div>
+                    <ul id="logAcoes" class="list-disc pl-5 space-y-1 text-sm sm:text-base text-slate-600 dark:text-slate-400"></ul>
+                </div>
+
+                <!-- Log de Erros -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-2 sm:mb-0 tracking-wider">Log de Erros</h2>
+                        <button onclick="limparErrorLog()" class="action-btn bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm">Limpar Erros</button>
+                    </div>
+                    <ul id="errorLog" class="list-disc pl-5 space-y-1 text-sm sm:text-base text-red-600 dark:text-red-400"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado inicial do simulador
+        let estado = {
+            isPaused: false,
+            simulationStage: 'PREPARAÇÃO DO REBOCADOR',
+            maneuverCount: 0,
+            simulationTasks: {
+                mcpFilterChanged: false, // NOVO
+                dgFilterChanged: false, // NOVO
+                purifierRuns: 0,
+                finalRefuelDone: false,
+                finalWaterIntakeDone: false
+            },
+            gerador: {
+                ligado: false,
+                selecionado: '',
+                niveisVerificados: false,
+                pressaoCombustivel: 100,
+                filtrosCombustivel: 'Normal'
+            },
+            luzTerra: true,
+            alimentacaoGerador: false,
+            ventilacao: false,
+            compressores: false,
+            bombasHidroforicas: false,
+            guinchoProa: false,
+            motores: {
+                ligados: false,
+                selecionado: '',
+                niveisVerificados: false,
+                pressaoCombustivel: 100,
+                filtrosCombustivel: 'Normal'
+            },
+            comando: 'Na Praça',
+            guinchoTeste: { av: false, ar: false },
+            caboRebocadorConectado: true,
+            propulsores: {
+                niveisOleoVerificados: { bb: false, be: false },
+                niveisHidraulicoVerificados: { bb: false, be: false },
+                bombasRefrigeracao: false
+            },
+            baterias: {
+                carregadorLigado: false,
+                modoFlutuando: false,
+                tensaoNormal: { bb: 24.0, be: 24.0 },
+                interligadas: false
+            },
+            tanqueDiesel: {
+                selecionadoOrigem: '',
+                selecionadoDestino: '',
+                purificadorAtivo: false,
+                recebimentoAtivo: false,
+                valvulaComunicaoAberta: false,
+                niveis: {
+                    servicoBB: 0,
+                    servicoBE: 0,
+                    duploFundoBB: 90,
+                    duploFundoBE: 90,
+                    central: 90
+                },
+                niveisCaminhao: {
+                    tanque1: 100, tanque2: 100, tanque3: 100,
+                    tanque4: 100, tanque5: 100, tanque6: 100
+                },
+                alarmes: {
+                    servicoBB: { alto: false, baixo: false },
+                    servicoBE: { alto: false, baixo: false },
+                    duploFundoBB: { alto: false, baixo: false },
+                    duploFundoBE: { alto: false, baixo: false },
+                    central: { alto: false, baixo: false },
+                    abastecimentoTotal: false
+                }
+            },
+            tanqueAgua: {
+                nivelProa: 0,
+                nivelPotavel: 90,
+                transferindo: false,
+                recebendo: false,
+                alarmeNivelBaixo: false,
+                alarmeNivelAltoProa: false
+            },
+            oleoLubrificante: {
+                carter: { dg_bb: 0, dg_be: 0, mcp_bb: 0, mcp_be: 0 },
+                liquidoArrefecimento: { dg_bb: 0, dg_be: 0, mcp_bb: 0, mcp_be: 0 },
+                bombonas: 10,
+                tambores: 9,
+                alarmes: {
+                    estoqueBaixo: false,
+                    carterBaixoDG_BB: false,
+                    carterBaixoDG_BE: false,
+                    carterBaixoMCP_BB: false,
+                    carterBaixoMCP_BE: false
+                }
+            }
+        };
+        
+        const initialStateJSON = JSON.stringify(estado);
+        let timerId = null;
+        let actionHistory = [];
+        let audioContext = null;
+        
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.warn('Web Audio API não suportada neste navegador.');
+        }
+
+        function playSound(frequency = 440, duration = 0.1, type = 'sine') {
+            if (!audioContext) return;
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.warn('Erro ao reproduzir som:', e);
+            }
+        }
+
+        function playEngineSound(action = 'start', type = 'dg') {
+            if (!audioContext) return;
+
+            const now = audioContext.currentTime;
+            const gainNode = audioContext.createGain();
+            gainNode.connect(audioContext.destination);
+
+            const isDG = type === 'dg';
+            const initialFreq = isDG ? 80 : 60;
+            const peakFreq = isDG ? 150 : 120;
+            const idleFreq = isDG ? 100 : 80;
+            const duration = isDG ? 1.5 : 2.5;
+            const mainVolume = isDG ? 0.2 : 0.3;
+
+            if (action === 'start') {
+                const oscillator = audioContext.createOscillator();
+                oscillator.type = 'sawtooth';
+                oscillator.connect(gainNode);
+
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(mainVolume, now + 0.1);
+                gainNode.gain.setValueAtTime(mainVolume, now + duration - 0.5);
+                gainNode.gain.linearRampToValueAtTime(0, now + duration);
+
+                oscillator.frequency.setValueAtTime(initialFreq, now);
+                oscillator.frequency.linearRampToValueAtTime(peakFreq, now + 0.2);
+                oscillator.frequency.linearRampToValueAtTime(idleFreq, now + duration);
+
+                oscillator.start(now);
+                oscillator.stop(now + duration);
+            } else { // stop
+                const oscillator = audioContext.createOscillator();
+                oscillator.type = 'sawtooth';
+                oscillator.connect(gainNode);
+
+                gainNode.gain.setValueAtTime(mainVolume, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 1.0);
+
+                oscillator.frequency.setValueAtTime(idleFreq, now);
+                oscillator.frequency.linearRampToValueAtTime(20, now + 1.0);
+
+                oscillator.start(now);
+                oscillator.stop(now + 1.0);
+            }
+        }
+
+        function saveToHistory() {
+            actionHistory.push(JSON.stringify(estado));
+            if (actionHistory.length > 10) actionHistory.shift();
+        }
+
+        function undoAction() {
+            if (actionHistory.length > 0) {
+                estado = JSON.parse(actionHistory.pop());
+                atualizarInterface();
+                const logList = document.getElementById('logAcoes');
+                if (logList.lastChild) {
+                    logList.lastChild.classList.add('undo-highlight');
+                    setTimeout(() => {
+                        if (logList.lastChild) logList.lastChild.classList.remove('undo-highlight');
+                    }, 2000);
+                }
+                adicionarLog('Última ação desfeita.');
+                playSound(660, 0.1);
+            } else {
+                mostrarAlerta('Nenhuma ação para desfazer.', 'warning');
+            }
+        }
+
+        function carregarEstado() {
+            const savedState = localStorage.getItem('simuladorEstado');
+            if (savedState) {
+                estado = JSON.parse(savedState);
+                if (estado.gerador.niveisVerificados === undefined) estado.gerador.niveisVerificados = false;
+                if (estado.motores.niveisVerificados === undefined) estado.motores.niveisVerificados = false;
+                if (estado.motores.selecionado === undefined) estado.motores.selecionado = '';
+                // **NOVO:** Garante que as novas tarefas existam em estados salvos antigos
+                if (estado.simulationTasks.mcpFilterChanged === undefined) estado.simulationTasks.mcpFilterChanged = false;
+                if (estado.simulationTasks.dgFilterChanged === undefined) estado.simulationTasks.dgFilterChanged = false;
+
+            } else {
+                initializeNewState();
+            }
+            adicionarLog('Simulação carregada.');
+            atualizarInterface();
+            iniciarTimer();
+        }
+
+        function salvarEstado() {
+            localStorage.setItem('simuladorEstado', JSON.stringify(estado));
+        }
+
+        function mostrarAlerta(mensagem, tipo = 'error') {
+            const modalContent = document.getElementById('modalContent');
+            const title = document.getElementById('alertTitle');
+            const message = document.getElementById('alertMessage');
+            title.textContent = tipo === 'error' ? 'Erro' : tipo === 'warning' ? 'Aviso' : 'Sucesso';
+            message.textContent = mensagem;
+            modalContent.className = `p-6 rounded-xl shadow-lg max-w-md w-full modal-enter ${tipo === 'error' ? 'bg-red-50 dark:bg-red-900/20' : tipo === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'bg-green-50 dark:bg-green-900/20'}`;
+            document.getElementById('alertModal').classList.remove('hidden');
+            document.getElementById('alertModal').classList.add('flex');
+            document.getElementById('alertModal').focus();
+            if (tipo === 'error') adicionarErrorLog(mensagem);
+            playSound(tipo === 'error' ? 220 : 440, 0.2, tipo === 'error' ? 'square' : 'sine');
+        }
+
+        function closeAlert() {
+            const modal = document.getElementById('alertModal');
+            const modalContent = document.getElementById('modalContent');
+            modalContent.classList.remove('modal-enter');
+            modalContent.classList.add('modal-exit');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modalContent.classList.remove('modal-exit');
+                modalContent.classList.add('modal-enter');
+            }, 300);
+            playSound(440, 0.1);
+        }
+
+        function adicionarLog(mensagem) {
+            const logList = document.getElementById('logAcoes');
+            const li = document.createElement('li');
+            li.textContent = `${new Date().toLocaleTimeString('pt-BR')}: ${mensagem}`;
+            logList.appendChild(li);
+            if (logList.children.length > 50) {
+                logList.removeChild(logList.firstChild);
+            }
+            logList.scrollTop = logList.scrollHeight;
+            salvarEstado();
+        }
+
+        function adicionarErrorLog(mensagem) {
+            const errorList = document.getElementById('errorLog');
+            const li = document.createElement('li');
+            li.textContent = `${new Date().toLocaleTimeString('pt-BR')}: ${mensagem}`;
+            errorList.appendChild(li);
+            if (errorList.children.length > 50) {
+                errorList.removeChild(errorList.firstChild);
+            }
+            errorList.scrollTop = errorList.scrollHeight;
+            salvarEstado();
+        }
+
+        function limparLog() {
+            document.getElementById('logAcoes').innerHTML = '';
+            adicionarLog('Log de ações limpo.');
+            playSound(440, 0.1);
+        }
+
+        function limparErrorLog() {
+            document.getElementById('errorLog').innerHTML = '';
+            adicionarLog('Log de erros limpo.');
+            playSound(440, 0.1);
+        }
+
+        function exportarLog() {
+            const logList = document.getElementById('logAcoes').children;
+            let logText = 'Log de Ações do Simulador de Praça de Máquinas\n\n';
+            for (let li of logList) {
+                logText += li.textContent + '\n';
+            }
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `log_simulador_${new Date().toISOString().replace(/[:.]/g, '-')}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            adicionarLog('Log exportado.');
+            playSound(440, 0.1);
+        }
+
+        function iniciarTimer() {
+            if (timerId) clearInterval(timerId);
+            timerId = setInterval(() => {
+                if(estado.isPaused) return;
+
+                if (estado.motores.ligados) {
+                    const consumoDiesel = 0.5;
+                    const retornoDiesel = 0.2;
+                    const consumoOleoLub = 0.1;
+                    if (estado.tanqueDiesel.valvulaComunicaoAberta) {
+                        const totalNivel = estado.tanqueDiesel.niveis.servicoBB + estado.tanqueDiesel.niveis.servicoBE;
+                        const novoTotal = totalNivel - consumoDiesel + retornoDiesel;
+                        estado.tanqueDiesel.niveis.servicoBB = Math.max(0, novoTotal / 2);
+                        estado.tanqueDiesel.niveis.servicoBE = Math.max(0, novoTotal / 2);
+                    } else {
+                        estado.tanqueDiesel.niveis.servicoBB = Math.max(0, estado.tanqueDiesel.niveis.servicoBB - consumoDiesel + retornoDiesel);
+                        estado.tanqueDiesel.niveis.servicoBE = Math.max(0, estado.tanqueDiesel.niveis.servicoBE - consumoDiesel);
+                    }
+                    estado.oleoLubrificante.carter.mcp_bb = Math.max(0, estado.oleoLubrificante.carter.mcp_bb - (consumoOleoLub / 2));
+                    estado.oleoLubrificante.carter.mcp_be = Math.max(0, estado.oleoLubrificante.carter.mcp_be - (consumoOleoLub / 2));
+                }
+                
+                if(estado.gerador.ligado) {
+                    const geradorAtivo = estado.gerador.selecionado;
+                    if (geradorAtivo === 'BB') {
+                        estado.oleoLubrificante.carter.dg_bb = Math.max(0, estado.oleoLubrificante.carter.dg_bb - 0.05);
+                    } else if (geradorAtivo === 'BE') {
+                        estado.oleoLubrificante.carter.dg_be = Math.max(0, estado.oleoLubrificante.carter.dg_be - 0.05);
+                    }
+                }
+                
+                const checkCarterLevel = (type, side) => {
+                    if (!side) return; 
+                    const key = `${type}_${side}`;
+                    const alarmKey = `carterBaixo${type.toUpperCase()}_${side.toUpperCase()}`;
+                    const level = estado.oleoLubrificante.carter[key];
+                    const alarmTriggered = estado.oleoLubrificante.alarmes[alarmKey];
+
+                    if (level <= 50 && !alarmTriggered) {
+                        mostrarAlerta(`ALERTA: Nível de óleo do cárter do ${type.toUpperCase()} ${side.toUpperCase()} está baixo (${level.toFixed(1)}%). Complete o óleo.`, 'error');
+                        estado.oleoLubrificante.alarmes[alarmKey] = true;
+                    } else if (level > 50 && alarmTriggered) {
+                        estado.oleoLubrificante.alarmes[alarmKey] = false;
+                    }
+                };
+
+                if (estado.gerador.ligado) {
+                    checkCarterLevel('dg', estado.gerador.selecionado.toLowerCase());
+                }
+                if (estado.motores.ligados) {
+                    checkCarterLevel('mcp', 'bb');
+                    checkCarterLevel('mcp', 'be');
+                }
+
+                if (estado.gerador.ligado && estado.gerador.filtrosCombustivel === 'Normal') {
+                    estado.gerador.pressaoCombustivel = Math.max(0, estado.gerador.pressaoCombustivel - 0.5);
+                    if (estado.gerador.pressaoCombustivel <= 60) {
+                        estado.gerador.filtrosCombustivel = 'Sujo';
+                        mostrarAlerta('ALERTA: Pressão de combustível do DIESEL-GERADOR baixa! Trocar filtros.', 'error');
+                    }
+                }
+                if (estado.motores.ligados && estado.motores.filtrosCombustivel === 'Normal') {
+                    estado.motores.pressaoCombustivel = Math.max(0, estado.motores.pressaoCombustivel - 0.5);
+                     if (estado.motores.pressaoCombustivel <= 60) {
+                        estado.motores.filtrosCombustivel = 'Sujo';
+                        mostrarAlerta('ALERTA: Pressão de combustível dos Motores Principais baixa! Trocar filtros.', 'error');
+                    }
+                }
+                
+                if (estado.tanqueDiesel.purificadorAtivo) {
+                    const tanqueOrigem = estado.tanqueDiesel.selecionadoOrigem;
+                    const tanqueDestino = estado.tanqueDiesel.selecionadoDestino;
+
+                    if (!tanqueOrigem || !tanqueDestino || estado.tanqueDiesel.niveis[tanqueOrigem] <= 0) {
+                        pararTransferencia();
+                        return;
+                    }
+
+                    const transferAmount = 1;
+                    estado.tanqueDiesel.niveis[tanqueOrigem] = Math.max(0, estado.tanqueDiesel.niveis[tanqueOrigem] - transferAmount);
+                    
+                    if (tanqueDestino === 'servicoBBBE') {
+                        const nivelMedioDestino = (estado.tanqueDiesel.niveis.servicoBB + estado.tanqueDiesel.niveis.servicoBE) / 2;
+                        if (nivelMedioDestino < 90) {
+                            estado.tanqueDiesel.niveis.servicoBB = Math.min(90, estado.tanqueDiesel.niveis.servicoBB + transferAmount / 2);
+                            estado.tanqueDiesel.niveis.servicoBE = Math.min(90, estado.tanqueDiesel.niveis.servicoBE + transferAmount / 2);
+                        } else {
+                             pararTransferencia();
+                             mostrarAlerta(`Alarme! Tanques de serviço BB/BE atingiram 90%. Transferência parada.`, 'warning');
+                             adicionarLog(`AVISO: Tanques de serviço BB/BE cheios a 90%. Purificador parado automaticamente.`);
+                        }
+                    } else {
+                        estado.tanqueDiesel.niveis[tanqueDestino] = Math.min(90, estado.tanqueDiesel.niveis[tanqueDestino] + transferAmount);
+                        if (estado.tanqueDiesel.niveis[tanqueDestino] >= 90) {
+                           pararTransferencia();
+                           mostrarAlerta(`Alarme! Tanque de diesel ${tanqueDestino} atingiu 90%. Transferência parada.`, 'warning');
+                           adicionarLog(`AVISO: Tanque de diesel ${tanqueDestino} cheio a 90%. Purificador parado automaticamente.`);
+                        }
+                    }
+                }
+                
+                if (estado.tanqueDiesel.recebimentoAtivo) {
+                    const tanqueDestino = estado.tanqueDiesel.recebimentoTanque;
+                    
+                    if (tanqueDestino && estado.tanqueDiesel.niveis[tanqueDestino] < 90) {
+                        estado.tanqueDiesel.niveis[tanqueDestino] = Math.min(90, estado.tanqueDiesel.niveis[tanqueDestino] + 5);
+                        if (estado.tanqueDiesel.niveis[tanqueDestino] >= 95 && !estado.tanqueDiesel.alarmes[tanqueDestino].alto) {
+                            mostrarAlerta(`ALERTA: Nível de diesel no tanque ${tanqueDestino} atingiu 95%. Perigo de transbordo por falha no recebimento!`, 'error');
+                            estado.tanqueDiesel.alarmes[tanqueDestino].alto = true;
+                        }
+                        if (estado.tanqueDiesel.niveis[tanqueDestino] >= 90) {
+                            pararRecebimento();
+                        }
+                    } else if (tanqueDestino && estado.tanqueDiesel.niveis[tanqueDestino] >= 90) {
+                         pararRecebimento();
+                    }
+                }
+
+                if (estado.tanqueAgua.transferindo) {
+                    const fonteAgua = document.getElementById('fonteAguaSelect').value;
+                    if (fonteAgua === 'tanquePotavel') {
+                        if (estado.tanqueAgua.nivelPotavel > 0 && estado.tanqueAgua.nivelProa < 90) {
+                            estado.tanqueAgua.nivelPotavel = Math.max(0, estado.tanqueAgua.nivelPotavel - 1);
+                            estado.tanqueAgua.nivelProa = Math.min(90, estado.tanqueAgua.nivelProa + 1);
+                        } else {
+                            pararTransferenciaAgua();
+                            if (estado.tanqueAgua.nivelPotavel <= 0) {
+                                mostrarAlerta('Transferência de água parada. Tanque de água potável vazio.', 'error');
+                            }
+                        }
+                    } else if (fonteAgua === 'porto') {
+                        if (estado.tanqueAgua.nivelProa < 90) {
+                           estado.tanqueAgua.nivelProa = Math.min(90, estado.tanqueAgua.nivelProa + 2);
+                        } else {
+                             pararTransferenciaAgua();
+                             mostrarAlerta('Transferência de água parada. Tanque da proa atingiu 90%.', 'warning');
+                        }
+                    }
+                }
+
+                if (estado.tanqueAgua.recebendo) {
+                    if (estado.tanqueAgua.nivelPotavel < 90) {
+                        estado.tanqueAgua.nivelPotavel = Math.min(90, estado.tanqueAgua.nivelPotavel + 5);
+                        if (estado.tanqueAgua.nivelPotavel >= 90) {
+                            pararRecebimentoAguaDoPorto();
+                        }
+                    }
+                }
+
+                for (const tanque in estado.tanqueDiesel.niveis) {
+                    const nivel = estado.tanqueDiesel.niveis[tanque];
+                    if (nivel <= 30 && (tanque === 'servicoBB' || tanque === 'servicoBE') && !estado.tanqueDiesel.alarmes[tanque].baixo) {
+                        mostrarAlerta(`ALERTA: Nível de diesel no tanque de serviço ${tanque} está baixo (30%). Inicie a transferência!`, 'error');
+                        estado.tanqueDiesel.alarmes[tanque].baixo = true;
+                    } else if (nivel > 30 && (tanque === 'servicoBB' || tanque === 'servicoBE') && estado.tanqueDiesel.alarmes[tanque].baixo) {
+                        estado.tanqueDiesel.alarmes[tanque].baixo = false;
+                    }
+                }
+                
+                const totalDiesel = estado.tanqueDiesel.niveis.duploFundoBB + estado.tanqueDiesel.niveis.duploFundoBE + estado.tanqueDiesel.niveis.central;
+                const totalCapacidade = 270;
+                if (totalDiesel / totalCapacidade <= 0.25 && !estado.tanqueDiesel.alarmes.abastecimentoTotal) {
+                    if (estado.motores.ligados) {
+                        estado.simulationStage = 'RETORNANDO_PARA_ABASTECER';
+                        mostrarAlerta('ALERTA: Nível total de combustível crítico (25%). Termine a manobra e retorne ao porto para reabastecer.', 'warning');
+                    } else {
+                        mostrarAlerta(`AVISO: O nível total de diesel está abaixo de 25%. Programe o reabastecimento por caminhão.`, 'warning');
+                    }
+                    estado.tanqueDiesel.alarmes.abastecimentoTotal = true;
+                } else if (totalDiesel / totalCapacidade > 0.25 && estado.tanqueDiesel.alarmes.abastecimentoTotal) {
+                    estado.tanqueDiesel.alarmes.abastecimentoTotal = false;
+                }
+
+                if (!estado.baterias.carregadorLigado) {
+                    estado.baterias.tensaoNormal.bb = Math.max(20, estado.baterias.tensaoNormal.bb - 0.1);
+                    estado.baterias.tensaoNormal.be = Math.max(20, estado.baterias.tensaoNormal.be - 0.1);
+                } else if (estado.baterias.modoFlutuando) {
+                    estado.baterias.tensaoNormal.bb = Math.min(28, estado.baterias.tensaoNormal.bb + 0.1);
+                    estado.baterias.tensaoNormal.be = Math.min(28, estado.baterias.tensaoNormal.be + 0.1);
+                }
+
+                atualizarInterface();
+            }, 5000);
+        }
+
+        // Função para atualizar interface
+        function atualizarInterface() {
+            document.getElementById('simulationStageDisplay').textContent = estado.simulationStage.replace(/_/g, ' ');
+            document.getElementById('btnGeradorBB').classList.toggle('active', estado.gerador.selecionado === 'BB');
+            document.getElementById('btnGeradorBE').classList.toggle('active', estado.gerador.selecionado === 'BE');
+            document.getElementById('btnMotorBB').classList.toggle('active', estado.motores.selecionado === 'BB');
+            document.getElementById('btnMotorBE').classList.toggle('active', estado.motores.selecionado === 'BE');
+            const statusGeradorElement = document.getElementById('statusGerador');
+            statusGeradorElement.textContent = estado.gerador.ligado ? `Ligado (${estado.gerador.selecionado})` : 'Desligado';
+            statusGeradorElement.className = estado.gerador.ligado ? 'status-on' : 'status-off';
+            document.getElementById('statusLuzTerra').textContent = estado.luzTerra ? 'Ligada' : 'Desligada';
+            document.getElementById('statusLuzTerra').className = estado.luzTerra ? 'status-on' : 'status-off';
+            document.getElementById('statusAlimentacaoGerador').textContent = estado.alimentacaoGerador ? 'Ligada' : 'Desligada';
+            document.getElementById('statusAlimentacaoGerador').className = estado.alimentacaoGerador ? 'status-on' : 'status-off';
+            document.getElementById('statusVentilacao').textContent = estado.ventilacao ? 'Ligada' : 'Desligada';
+            document.getElementById('statusVentilacao').className = estado.ventilacao ? 'status-on' : 'status-off';
+            document.getElementById('statusCompressores').textContent = estado.compressores ? 'Ligados' : 'Desligados';
+            document.getElementById('statusCompressores').className = estado.compressores ? 'status-on' : 'status-off';
+            document.getElementById('statusBombasHidroforicas').textContent = estado.bombasHidroforicas ? 'Ligadas' : 'Desligadas';
+            document.getElementById('statusBombasHidroforicas').className = estado.bombasHidroforicas ? 'status-on' : 'status-off';
+            document.getElementById('statusGuinchoProa').textContent = estado.guinchoProa ? 'Energizado' : 'Desenergizado';
+            document.getElementById('statusGuinchoProa').className = estado.guinchoProa ? 'status-on' : 'status-off';
+            document.getElementById('statusMotores').textContent = estado.motores.ligados ? 'Ligados' : 'Desligado';
+            document.getElementById('statusMotores').className = estado.motores.ligados ? 'status-on' : 'status-off';
+            document.getElementById('statusComando').textContent = estado.comando;
+            document.getElementById('statusComando').className = estado.comando === 'No Passadiço' ? 'status-on' : 'status-off';
+            document.getElementById('statusGuinchoTeste').textContent = estado.guinchoTeste.av && estado.guinchoTeste.ar ? 'Testado (AV e AR)' : estado.guinchoTeste.av ? 'Testado (AV)' : estado.guinchoTeste.ar ? 'Testado (AR)' : 'Não Testado';
+            document.getElementById('statusGuinchoTeste').className = (estado.guinchoTeste.av || estado.guinchoTeste.ar) ? 'status-on' : 'status-off';
+            document.getElementById('progressTanqueServicoBB').style.width = `${estado.tanqueDiesel.niveis.servicoBB}%`;
+            document.getElementById('statusTanqueServicoBB').textContent = `${estado.tanqueDiesel.niveis.servicoBB.toFixed(1)}%`;
+            document.getElementById('progressTanqueServicoBE').style.width = `${estado.tanqueDiesel.niveis.servicoBE}%`;
+            document.getElementById('statusTanqueServicoBE').textContent = `${estado.tanqueDiesel.niveis.servicoBE.toFixed(1)}%`;
+            document.getElementById('progressTanqueFundoBB').style.width = `${estado.tanqueDiesel.niveis.duploFundoBB}%`;
+            document.getElementById('statusTanqueFundoBB').textContent = `${estado.tanqueDiesel.niveis.duploFundoBB.toFixed(1)}%`;
+            document.getElementById('progressTanqueFundoBE').style.width = `${estado.tanqueDiesel.niveis.duploFundoBE}%`;
+            document.getElementById('statusTanqueFundoBE').textContent = `${estado.tanqueDiesel.niveis.duploFundoBE.toFixed(1)}%`;
+            document.getElementById('progressTanqueCentral').style.width = `${estado.tanqueDiesel.niveis.central}%`;
+            document.getElementById('statusTanqueCentral').textContent = `${estado.tanqueDiesel.niveis.central.toFixed(1)}%`;
+            document.getElementById('progressTanqueAguaPotavel').style.width = `${estado.tanqueAgua.nivelPotavel}%`;
+            document.getElementById('statusTanqueAguaPotavel').textContent = `${estado.tanqueAgua.nivelPotavel.toFixed(1)}%`;
+            document.getElementById('progressTanqueAguaProa').style.width = `${estado.tanqueAgua.nivelProa}%`;
+            document.getElementById('statusTanqueAguaProa').textContent = `${estado.tanqueAgua.nivelProa.toFixed(1)}%`;
+            document.getElementById('progressCarterDG-BB').style.width = `${estado.oleoLubrificante.carter.dg_bb}%`;
+            document.getElementById('statusCarterDG-BB').textContent = `${estado.oleoLubrificante.carter.dg_bb.toFixed(1)}%`;
+            document.getElementById('progressLiquidoDG-BB').style.width = `${estado.oleoLubrificante.liquidoArrefecimento.dg_bb}%`;
+            document.getElementById('statusLiquidoDG-BB').textContent = `${estado.oleoLubrificante.liquidoArrefecimento.dg_bb.toFixed(1)}%`;
+            document.getElementById('progressCarterDG-BE').style.width = `${estado.oleoLubrificante.carter.dg_be}%`;
+            document.getElementById('statusCarterDG-BE').textContent = `${estado.oleoLubrificante.carter.dg_be.toFixed(1)}%`;
+            document.getElementById('progressLiquidoDG-BE').style.width = `${estado.oleoLubrificante.liquidoArrefecimento.dg_be}%`;
+            document.getElementById('statusLiquidoDG-BE').textContent = `${estado.oleoLubrificante.liquidoArrefecimento.dg_be.toFixed(1)}%`;
+            document.getElementById('progressCarterMCP-BB').style.width = `${estado.oleoLubrificante.carter.mcp_bb}%`;
+            document.getElementById('statusCarterMCP-BB').textContent = `${estado.oleoLubrificante.carter.mcp_bb.toFixed(1)}%`;
+            document.getElementById('progressLiquidoMCP-BB').style.width = `${estado.oleoLubrificante.liquidoArrefecimento.mcp_bb}%`;
+            document.getElementById('statusLiquidoMCP-BB').textContent = `${estado.oleoLubrificante.liquidoArrefecimento.mcp_bb.toFixed(1)}%`;
+            document.getElementById('progressCarterMCP-BE').style.width = `${estado.oleoLubrificante.carter.mcp_be}%`;
+            document.getElementById('statusCarterMCP-BE').textContent = `${estado.oleoLubrificante.carter.mcp_be.toFixed(1)}%`;
+            document.getElementById('progressLiquidoMCP-BE').style.width = `${estado.oleoLubrificante.liquidoArrefecimento.mcp_be}%`;
+            document.getElementById('statusLiquidoMCP-BE').textContent = `${estado.oleoLubrificante.liquidoArrefecimento.mcp_be.toFixed(1)}%`;
+            document.getElementById('statusPropulsorBB').textContent = estado.propulsores.niveisOleoVerificados.bb ? 'Verificado' : 'Não Verificado';
+            document.getElementById('statusPropulsorBB').className = estado.propulsores.niveisOleoVerificados.bb ? 'status-on' : 'status-off';
+            document.getElementById('statusPropulsorBE').textContent = estado.propulsores.niveisOleoVerificados.be ? 'Verificado' : 'Não Verificado';
+            document.getElementById('statusPropulsorBE').className = estado.propulsores.niveisOleoVerificados.be ? 'status-on' : 'status-off';
+            document.getElementById('statusCarregadorBaterias').textContent = estado.baterias.carregadorLigado ? 'Ligado' : 'Desligado';
+            document.getElementById('statusCarregadorBaterias').className = estado.baterias.carregadorLigado ? 'status-on' : 'status-off';
+            document.getElementById('statusModoCarregador').textContent = estado.baterias.modoFlutuando ? 'Flutuando' : 'Manual';
+            document.getElementById('statusModoCarregador').className = estado.baterias.modoFlutuando ? 'status-on' : 'status-off';
+            const tensaoBB = estado.baterias.tensaoNormal.bb;
+            const tensaoBE = estado.baterias.tensaoNormal.be;
+            const statusBateriasBB = document.getElementById('statusBateriasBB');
+            statusBateriasBB.textContent = `Normal (${tensaoBB.toFixed(1)}V)`;
+            statusBateriasBB.className = (tensaoBB >= 24 && tensaoBB <= 28) ? 'status-on' : 'status-off';
+            const statusBateriasBE = document.getElementById('statusBateriasBE');
+            statusBateriasBE.textContent = `Normal (${tensaoBE.toFixed(1)}V)`;
+            statusBateriasBE.className = (tensaoBE >= 24 && tensaoBE <= 28) ? 'status-on' : 'status-off';
+            document.getElementById('statusInterligacao').textContent = estado.baterias.interligadas ? 'Ativada' : 'Desativada';
+            document.getElementById('statusInterligacao').className = estado.baterias.interligadas ? 'status-on' : 'status-off';
+            document.getElementById('statusCaboRebocador').textContent = estado.caboRebocadorConectado ? 'Conectado' : 'Desconectado';
+            document.getElementById('statusCaboRebocador').className = estado.caboRebocadorConectado ? 'status-on' : 'status-off';
+            for (let i = 1; i <= 6; i++) {
+                const progressId = `progressCaminhaoTanque${i}`;
+                const progressElement = document.getElementById(progressId);
+                if (progressElement) {
+                    progressElement.style.width = `${estado.tanqueDiesel.niveisCaminhao[`tanque${i}`]}%`;
+                }
+            }
+            document.getElementById('statusBombonas').textContent = estado.oleoLubrificante.bombonas;
+            document.getElementById('statusTambores').textContent = estado.oleoLubrificante.tambores;
+            const valvulaBtn = document.getElementById('valvulaComunicaoBtn');
+            const statusValvula = document.getElementById('statusValvulaComunicao');
+            if (estado.tanqueDiesel.valvulaComunicaoAberta) {
+                valvulaBtn.classList.remove('bg-slate-500', 'hover:bg-slate-600');
+                valvulaBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                statusValvula.textContent = 'Aberta';
+                statusValvula.className = 'status-on';
+            } else {
+                valvulaBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                valvulaBtn.classList.add('bg-slate-500', 'hover:bg-slate-600');
+                statusValvula.textContent = 'Fechada';
+                statusValvula.className = 'status-off';
+            }
+            const statusBombasRefrigeracao = document.getElementById('statusBombasRefrigeracao');
+            const btnBombasRefrigeracao = document.getElementById('btnBombasRefrigeracao');
+            if (estado.propulsores.bombasRefrigeracao) {
+                statusBombasRefrigeracao.textContent = 'Ligadas';
+                statusBombasRefrigeracao.className = 'status-on';
+                btnBombasRefrigeracao.classList.remove('bg-sky-500', 'hover:bg-sky-600');
+                btnBombasRefrigeracao.classList.add('bg-green-500', 'hover:bg-green-600');
+            } else {
+                statusBombasRefrigeracao.textContent = 'Desligadas';
+                statusBombasRefrigeracao.className = 'status-off';
+                btnBombasRefrigeracao.classList.remove('bg-green-500', 'hover:bg-green-600');
+                btnBombasRefrigeracao.classList.add('bg-sky-500', 'hover:bg-sky-600');
+            }
+            
+            const updatePressureDisplay = (id, pressure, isOn) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const displayPressure = isOn ? pressure : 0;
+                    el.textContent = `${displayPressure.toFixed(1)}%`;
+                    el.className = 'pressure-display ' + (displayPressure > 60 ? 'pressure-ok' : 'pressure-low');
+                }
+            };
+            updatePressureDisplay('pressaoCombDG-BB', estado.gerador.pressaoCombustivel, estado.gerador.ligado);
+            updatePressureDisplay('pressaoCombDG-BE', estado.gerador.pressaoCombustivel, estado.gerador.ligado);
+            updatePressureDisplay('pressaoCombMCP-BB', estado.motores.pressaoCombustivel, estado.motores.ligados);
+            updatePressureDisplay('pressaoCombMCP-BE', estado.motores.pressaoCombustivel, estado.motores.ligados);
+            
+            salvarEstado();
+        }
+
+        // Funções de controle
+        function selectEquipment(type, side) {
+            playSound(523, 0.05);
+            if (type === 'gerador') {
+                estado.gerador.selecionado = side;
+            } else if (type === 'motor') {
+                estado.motores.selecionado = side;
+            }
+            atualizarInterface();
+        }
+
+        function complementarCarter(equipamento) {
+            if (equipamento === 'gerador') {
+                const geradorSelecionado = estado.gerador.selecionado;
+                if (!geradorSelecionado) {
+                    mostrarAlerta('Selecione um DIESEL-GERADOR (BB ou BE) para completar o óleo.', 'error');
+                    return;
+                }
+                if (estado.oleoLubrificante.bombonas > 0) {
+                    estado.oleoLubrificante.bombonas -= 0.5;
+                    if (geradorSelecionado === 'BB') {
+                        estado.oleoLubrificante.carter.dg_bb = 90;
+                    } else {
+                        estado.oleoLubrificante.carter.dg_be = 90;
+                    }
+                    adicionarLog(`Óleo do cárter do DIESEL-GERADOR ${geradorSelecionado} completado.`);
+                } else {
+                    mostrarAlerta('Estoque de bombonas de óleo para o DIESEL-GERADOR vazio.', 'error');
+                }
+            } else if (equipamento === 'motores') {
+                const motorSelecionado = estado.motores.selecionado;
+                 if (!motorSelecionado) {
+                    mostrarAlerta('Selecione um MCP (BB ou BE) para completar o óleo.', 'error');
+                    return;
+                }
+                if (estado.oleoLubrificante.tambores >= 1.5) {
+                    estado.oleoLubrificante.tambores -= 1.5;
+                    if (motorSelecionado === 'BB') {
+                        estado.oleoLubrificante.carter.mcp_bb = 90;
+                        adicionarLog('Óleo do cárter do MCP BB completado.');
+                    } else if (motorSelecionado === 'BE') {
+                        estado.oleoLubrificante.carter.mcp_be = 90;
+                        adicionarLog('Óleo do cárter do MCP BE completado.');
+                    }
+                } else {
+                    mostrarAlerta('Estoque de tambores de óleo para os motores principais insuficiente.', 'error');
+                }
+            }
+            atualizarInterface();
+        }
+
+        function complementarLiquidoArrefecimento(equipamento) {
+           if (equipamento === 'gerador') {
+                const geradorSelecionado = estado.gerador.selecionado;
+                if (!geradorSelecionado) {
+                    mostrarAlerta('Selecione um DIESEL-GERADOR (BB ou BE) para completar o líquido.', 'error');
+                    return;
+                }
+                if (geradorSelecionado === 'BB') {
+                    estado.oleoLubrificante.liquidoArrefecimento.dg_bb = 90;
+                } else {
+                    estado.oleoLubrificante.liquidoArrefecimento.dg_be = 90;
+                }
+                adicionarLog(`Líquido de arrefecimento do DIESEL-GERADOR ${geradorSelecionado} completado.`);
+           } else if (equipamento === 'motores') {
+                 const motorSelecionado = estado.motores.selecionado;
+                 if (!motorSelecionado) {
+                    mostrarAlerta('Selecione um MCP (BB ou BE) para completar o líquido.', 'error');
+                    return;
+                }
+                if (motorSelecionado === 'BB') {
+                    estado.oleoLubrificante.liquidoArrefecimento.mcp_bb = 90;
+                    adicionarLog('Líquido de arrefecimento do MCP BB completado.');
+                } else if (motorSelecionado === 'BE') {
+                    estado.oleoLubrificante.liquidoArrefecimento.mcp_be = 90;
+                     adicionarLog('Líquido de arrefecimento do MCP BE completado.');
+                }
+           }
+           atualizarInterface();
+        }
+        
+        function verificarNiveis(equipamento) {
+            saveToHistory();
+            if (equipamento === 'gerador') {
+                const geradorSelecionado = estado.gerador.selecionado;
+                if (!geradorSelecionado) {
+                    mostrarAlerta('Selecione um DIESEL-GERADOR para verificar os níveis.', 'error');
+                    return;
+                }
+                const carter = (geradorSelecionado === 'BB') ? estado.oleoLubrificante.carter.dg_bb : estado.oleoLubrificante.carter.dg_be;
+                const liquido = (geradorSelecionado === 'BB') ? estado.oleoLubrificante.liquidoArrefecimento.dg_bb : estado.oleoLubrificante.liquidoArrefecimento.dg_be;
+
+                if (carter > 50 && liquido > 50) {
+                    estado.gerador.niveisVerificados = true;
+                    adicionarLog(`Níveis do DIESEL-GERADOR ${geradorSelecionado} OK.`);
+                    mostrarAlerta(`Níveis do DIESEL-GERADOR ${geradorSelecionado} verificados. Nível de óleo: ${carter.toFixed(1)}%, Nível de arrefecimento: ${liquido.toFixed(1)}%.`, 'success');
+                } else {
+                    estado.gerador.niveisVerificados = false;
+                    mostrarAlerta(`Partida negada. Níveis do DIESEL-GERADOR ${geradorSelecionado} estão críticos (igual ou inferior a 50%). Complete os fluidos.`, 'error');
+                }
+            } else if (equipamento === 'motores') {
+                const carterBB = estado.oleoLubrificante.carter.mcp_bb;
+                const liquidoBB = estado.oleoLubrificante.liquidoArrefecimento.mcp_bb;
+                const carterBE = estado.oleoLubrificante.carter.mcp_be;
+                const liquidoBE = estado.oleoLubrificante.liquidoArrefecimento.mcp_be;
+
+                if (carterBB > 50 && liquidoBB > 50 && carterBE > 50 && liquidoBE > 50) {
+                    estado.motores.niveisVerificados = true;
+                    adicionarLog('Níveis dos Motores Principais OK.');
+                    mostrarAlerta('Níveis dos Motores Principais verificados e prontos para partida.', 'success');
+                } else {
+                    estado.motores.niveisVerificados = false;
+                    mostrarAlerta('Partida negada. Níveis de um ou ambos os Motores Principais estão críticos (igual ou inferior a 50%). Complete os fluidos.', 'error');
+                }
+            }
+            atualizarInterface();
+        }
+
+        function partirGerador() {
+            const geradorSelecionado = estado.gerador.selecionado;
+            if (geradorSelecionado === '') {
+                mostrarAlerta('Selecione um DIESEL-GERADOR (BB ou BE) antes de partir.', 'error');
+                return;
+            }
+            if (!estado.gerador.niveisVerificados) {
+                mostrarAlerta('Verifique os níveis do DIESEL-GERADOR selecionado antes de partir.', 'error');
+                return;
+            }
+             if (estado.gerador.pressaoCombustivel <= 60) {
+                mostrarAlerta('Pressão de combustível do DIESEL-GERADOR está baixa. Troque os filtros.', 'error');
+                return;
+            }
+            if (estado.gerador.ligado) {
+                mostrarAlerta('Um DIESEL-GERADOR já está ligado.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.gerador.ligado = true;
+            adicionarLog(`DIESEL-GERADOR ${geradorSelecionado} ligado.`);
+            playEngineSound('start', 'dg');
+            atualizarInterface();
+        }
+
+        function desligarGerador() {
+            if (!estado.gerador.ligado) {
+                mostrarAlerta('O DIESEL-GERADOR já está desligado.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.gerador.ligado = false;
+            estado.alimentacaoGerador = false;
+            estado.guinchoProa = false;
+            estado.guinchoTeste = { av: false, ar: false };
+            estado.motores.ligados = false;
+            estado.comando = 'Na Praça';
+            adicionarLog('DIESEL-GERADOR desligado.');
+            playEngineSound('stop', 'dg');
+            atualizarInterface();
+        }
+
+        function desligarLuzTerra() {
+            if (!estado.luzTerra) {
+                mostrarAlerta('A luz de terra já está desligada.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.luzTerra = false;
+            adicionarLog('Luz de terra desligada.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+        
+        function conectarLuzTerra() {
+            if (estado.luzTerra) {
+                mostrarAlerta('A luz de terra já está conectada.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.luzTerra = true;
+            adicionarLog('Luz de terra conectada.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function ligarLuzTerra() {
+            if (estado.luzTerra) {
+                mostrarAlerta('A luz de terra já está ligada.', 'warning');
+                return;
+            }
+            if (!estado.caboRebocadorConectado) {
+                mostrarAlerta('Conecte o cabo de luz de terra antes de ligar a luz de terra.', 'error');
+                return;
+            }
+            saveToHistory();
+            estado.luzTerra = true;
+            estado.alimentacaoGerador = false;
+            estado.guinchoProa = false;
+            estado.guinchoTeste = { av: false, ar: false };
+            adicionarLog('Luz de terra ligada.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+        function acionarAlimentacaoGerador() {
+            if (!estado.gerador.ligado) {
+                mostrarAlerta('Ligue o DIESEL-GERADOR antes de acionar a alimentação.', 'error');
+                return;
+            }
+            if (estado.luzTerra) {
+                mostrarAlerta('Desligue a Luz de Terra antes de acionar a alimentação do gerador.', 'error');
+                return;
+            }
+            if (estado.alimentacaoGerador) {
+                mostrarAlerta('A alimentação do DIESEL-GERADOR já está acionada.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.alimentacaoGerador = true;
+            adicionarLog('Alimentação do DIESEL-GERADOR acionada.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function toggleVentilacao() {
+            if (!estado.ventilacao && !estado.alimentacaoGerador) {
+                mostrarAlerta('O DIESEL-GERADOR deve estar no barramento (alimentação acionada) para ligar a ventilação.', 'error');
+                return;
+            }
+            saveToHistory();
+            estado.ventilacao = !estado.ventilacao;
+            if (!estado.ventilacao) {
+                estado.motores.ligados = false;
+                estado.comando = 'Na Praça';
+            }
+            adicionarLog(estado.ventilacao ? 'Ventilação ligada.' : 'Ventilação desligada.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function toggleCompressores() {
+            saveToHistory();
+            estado.compressores = !estado.compressores;
+            adicionarLog(estado.compressores ? 'Compressores ligados.' : 'Compressores desligados.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function purgarReservatorios() {
+            saveToHistory();
+            adicionarLog('Reservatórios purgados.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function toggleBombasHidroforicas() {
+            saveToHistory();
+            estado.bombasHidroforicas = !estado.bombasHidroforicas;
+            adicionarLog(estado.bombasHidroforicas ? 'Bombas hidrofóricas ligadas.' : 'Bombas hidrofóricas desligadas.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function energizarGuincho() {
+            if (!estado.alimentacaoGerador) {
+                mostrarAlerta('Acione a alimentação do DIESEL-GERADOR antes de energizar o guincho.', 'error');
+                return;
+            }
+            if (estado.guinchoProa) {
+                mostrarAlerta('O guincho de proa já está energizado.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.guinchoProa = true;
+            adicionarLog('Guincho de proa energizado.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+        
+        function verificarPropulsor(lado) {
+            saveToHistory();
+            estado.propulsores.niveisOleoVerificados[lado.toLowerCase()] = true;
+            estado.propulsores.niveisHidraulicoVerificados[lado.toLowerCase()] = true;
+            adicionarLog(`Níveis do propulsor ${lado} verificados.`);
+            atualizarInterface();
+        }
+
+        function toggleBombasRefrigeracao() {
+            saveToHistory();
+            estado.propulsores.bombasRefrigeracao = !estado.propulsores.bombasRefrigeracao;
+            adicionarLog(estado.propulsores.bombasRefrigeracao ? 'Bombas de refrigeração ligadas.' : 'Bombas de refrigeração desligadas.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function toggleCarregador() {
+            saveToHistory();
+            estado.baterias.carregadorLigado = !estado.baterias.carregadorLigado;
+            adicionarLog(`Carregador de baterias ${estado.baterias.carregadorLigado ? 'ligado' : 'desligado'}.`);
+            atualizarInterface();
+        }
+
+        function toggleModoCarregador() {
+            if (!estado.baterias.carregadorLigado) {
+                 mostrarAlerta('Ligue o carregador de baterias para alternar o modo.', 'warning');
+                 return;
+            }
+            saveToHistory();
+            estado.baterias.modoFlutuando = !estado.baterias.modoFlutuando;
+            adicionarLog(`Modo do carregador alterado para ${estado.baterias.modoFlutuando ? 'Flutuando' : 'Manual'}.`);
+            atualizarInterface();
+        }
+
+        function inspecionarBaterias() {
+            if (!estado.baterias.carregadorLigado || !estado.baterias.modoFlutuando) {
+                mostrarAlerta('O carregador deve estar ligado e no modo "Flutuando" para inspecionar as baterias.', 'error');
+                return;
+            }
+            saveToHistory();
+            estado.baterias.tensaoNormal.bb = 24.0 + (Math.random() * 4);
+            estado.baterias.tensaoNormal.be = 24.0 + (Math.random() * 4);
+            adicionarLog('Baterias inspecionadas. Tensão normal (24V).');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function interligarBaterias() {
+            saveToHistory();
+            estado.baterias.interligadas = !estado.baterias.interligadas;
+            adicionarLog(`Interligação dos bancos de bateria ${estado.baterias.interligadas ? 'ativada' : 'desativada'}.`);
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function checarPrePartida() {
+            if (!estado.motores.niveisVerificados) {
+                mostrarAlerta('Verifique os níveis dos Motores Principais antes de partir.', 'error');
+                return false;
+            }
+            if (estado.motores.pressaoCombustivel <= 60) {
+                mostrarAlerta('Pressão de combustível dos Motores Principais está baixa. Troque os filtros.', 'error');
+                return false;
+            }
+            if (!estado.propulsores.niveisOleoVerificados.bb || !estado.propulsores.niveisOleoVerificados.be) {
+                mostrarAlerta('Verifique os níveis de óleo nos propulsores BB e BE.', 'error');
+                return false;
+            }
+            if (!estado.baterias.carregadorLigado || !estado.baterias.modoFlutuando || estado.baterias.tensaoNormal.bb < 24 || estado.baterias.tensaoNormal.be < 24) {
+                mostrarAlerta('Verifique o carregador de baterias, o modo e a tensão de ambos os bancos.', 'error');
+                return false;
+            }
+            if (!estado.propulsores.bombasRefrigeracao) {
+                mostrarAlerta('Ligue as bombas de refrigeração dos propulsores.', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        function partirMotores() {
+             if (!checarPrePartida()) {
+                return;
+            }
+            if (estado.caboRebocadorConectado) {
+                mostrarAlerta('Desconecte o cabo do rebocador antes de partir os motores.', 'error');
+                return;
+            }
+            if (!estado.alimentacaoGerador) {
+                mostrarAlerta('Acione a alimentação do DIESEL-GERADOR antes de partir os motores.', 'error');
+                return;
+            }
+            if (!estado.ventilacao) {
+                mostrarAlerta('A ventilação da praça de máquinas deve estar ligada para partir os motores.', 'error');
+                return;
+            }
+            if (estado.motores.ligados) {
+                mostrarAlerta('Os motores já estão ligados.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.motores.ligados = true;
+            
+            if (estado.maneuverCount === 0) {
+                estado.simulationStage = 'SAIDA_PARA_PRIMEIRA_MANOBRA';
+            } else {
+                estado.simulationStage = 'SAIDA_PARA_A_SEGUNDA_MANOBRA';
+            }
+
+            adicionarLog('Motores principais ligados.');
+            adicionarLog('Rebocador saiu para manobra.');
+            playEngineSound('start', 'mcp');
+            atualizarInterface();
+        }
+
+        function pararMotores() {
+            if (!estado.motores.ligados) {
+                mostrarAlerta('Os motores principais já estão desligados.', 'warning');
+                return;
+            }
+            
+            if (estado.simulationStage === 'RETORNANDO_PARA_ABASTECER') {
+                saveToHistory();
+                estado.motores.ligados = false;
+                estado.maneuverCount = 2; // Força o fim das manobras
+                estado.simulationStage = 'ABASTECIMENTO_FINAL';
+                mostrarAlerta('Retorno ao porto concluído devido ao baixo nível de combustível. Inicie o reabastecimento final.', 'success');
+                adicionarLog('Motores principais desligados.');
+                adicionarLog('Retorno forçado ao porto para reabastecimento.');
+                playEngineSound('stop', 'mcp');
+                atualizarInterface();
+                return;
+            }
+
+            saveToHistory();
+            estado.motores.ligados = false;
+            estado.maneuverCount++;
+
+            estado.tanqueDiesel.niveis.servicoBB = Math.max(0, estado.tanqueDiesel.niveis.servicoBB - 15);
+            estado.tanqueDiesel.niveis.servicoBE = Math.max(0, estado.tanqueDiesel.niveis.servicoBE - 15);
+            estado.tanqueAgua.nivelPotavel = Math.max(0, estado.tanqueAgua.nivelPotavel - 10);
+            
+            if (estado.maneuverCount === 1) {
+                estado.simulationStage = 'MANOBRA_ENCERRADA_PRIMEIRA_ATRACACAO';
+                mostrarAlerta('Atracação concluída. Prepare o rebocador para a segunda manobra.', 'success');
+            } else {
+                estado.simulationStage = 'ABASTECIMENTO_FINAL';
+                mostrarAlerta('Segunda atracação concluída. Inicie o reabastecimento de combustível e água para finalizar a simulação.', 'success');
+                checkSimulationEnd(); // Verifica se já pode terminar
+            }
+
+            adicionarLog('Motores principais desligados.');
+            playEngineSound('stop', 'mcp');
+            atualizarInterface();
+        }
+
+        function checkSimulationEnd() {
+            const tasks = estado.simulationTasks;
+            const allTasksDone = tasks.finalRefuelDone &&
+                                 tasks.finalWaterIntakeDone &&
+                                 tasks.mcpFilterChanged &&
+                                 tasks.dgFilterChanged;
+
+            if (estado.maneuverCount >= 2 && allTasksDone) {
+                estado.simulationStage = 'ENCERRAMENTO';
+                document.getElementById('endModal').classList.remove('hidden');
+                document.getElementById('endModal').classList.add('flex');
+            } else if (estado.simulationStage === 'ABASTECIMENTO_FINAL' && !allTasksDone) {
+                let pendingTasks = [];
+                if (!tasks.mcpFilterChanged) pendingTasks.push("Trocar filtro dos MCPs");
+                if (!tasks.dgFilterChanged) pendingTasks.push("Trocar filtro do DG");
+                if (!tasks.finalRefuelDone) pendingTasks.push("Abastecer com óleo diesel");
+                if (!tasks.finalWaterIntakeDone) pendingTasks.push("Abastecer com água potável");
+                mostrarAlerta(`Ainda há tarefas obrigatórias pendentes: ${pendingTasks.join(', ')}.`, 'warning');
+            }
+        }
+
+        function passarComandoPassadico() {
+            if (!estado.motores.ligados) {
+                mostrarAlerta('Ligue os motores principais antes de passar o comando ao passadiço.', 'error');
+                return;
+            }
+            if (estado.comando === 'No Passadiço') {
+                mostrarAlerta('O comando já foi passado ao passadiço.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.comando = 'No Passadiço';
+            adicionarLog('Comando passado ao passadiço.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function testarGuincho(direcao) {
+            if (!estado.guinchoProa) {
+                mostrarAlerta('Energize o guincho de proa antes de realizar o teste.', 'error');
+                return;
+            }
+            if (direcao.toLowerCase() === 'av' && estado.guinchoTeste.av) {
+                mostrarAlerta('O guincho (AV) já foi testado.', 'warning');
+                return;
+            }
+            if (direcao.toLowerCase() === 'ar' && estado.guinchoTeste.ar) {
+                mostrarAlerta('O guincho (AR) já foi testado.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.guinchoTeste[direcao.toLowerCase()] = true;
+            adicionarLog(`Guincho de proa testado (${direcao}).`);
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+        
+        function desconectarCabo() {
+            if (!estado.caboRebocadorConectado) {
+                 mostrarAlerta('O cabo do rebocador já está desconectado.', 'warning');
+                 return;
+            }
+            saveToHistory();
+            estado.caboRebocadorConectado = false;
+            adicionarLog('Cabo do rebocador desconectado.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+        
+         function conectarCabo() {
+            if (estado.caboRebocadorConectado) {
+                 mostrarAlerta('O cabo do rebocador já está conectado.', 'warning');
+                 return;
+            }
+            saveToHistory();
+            estado.caboRebocadorConectado = true;
+            adicionarLog('Cabo do rebocador conectado.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function iniciarTransferencia() {
+            const tanqueOrigem = document.getElementById('tanqueOrigemSelect').value;
+            const tanqueDestino = document.getElementById('tanqueDestinoSelect').value;
+
+            if (tanqueOrigem === '' || tanqueDestino === '') {
+                mostrarAlerta('Selecione os tanques de origem e destino para iniciar a transferência.', 'error');
+                return;
+            }
+            if (tanqueDestino.startsWith('duploFundo') || tanqueDestino === 'central') {
+                mostrarAlerta('Os tanques de armazenamento não podem receber óleo do purificador. Escolha um tanque de serviço.', 'error');
+                return;
+            }
+            if (estado.tanqueDiesel.purificadorAtivo) {
+                mostrarAlerta('O purificador já está em operação.', 'warning');
+                return;
+            }
+            if (estado.tanqueDiesel.niveis[tanqueOrigem] <= 0) {
+                mostrarAlerta(`O tanque de origem ${tanqueOrigem} está vazio. Não é possível transferir.`, 'error');
+                return;
+            }
+            if (tanqueDestino === 'servicoBBBE') {
+                const nivelMaximo = Math.max(estado.tanqueDiesel.niveis.servicoBB, estado.tanqueDiesel.niveis.servicoBE);
+                if (nivelMaximo >= 90) {
+                    mostrarAlerta('Pelo menos um dos tanques de serviço já está cheio (90%).', 'warning');
+                    return;
+                }
+            } else {
+                if (estado.tanqueDiesel.niveis[tanqueDestino] >= 90) {
+                    mostrarAlerta(`O tanque de destino ${tanqueDestino} já está cheio (90%).`, 'warning');
+                    return;
+                }
+            }
+            saveToHistory();
+            estado.tanqueDiesel.purificadorAtivo = true;
+            estado.tanqueDiesel.selecionadoOrigem = tanqueOrigem;
+            estado.tanqueDiesel.selecionadoDestino = tanqueDestino;
+            adicionarLog(`Purificador iniciado. Transferindo de ${tanqueOrigem} para ${tanqueDestino}.`);
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function pararTransferencia() {
+            if (!estado.tanqueDiesel.purificadorAtivo) {
+                mostrarAlerta('O purificador já está parado.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.simulationTasks.purifierRuns++;
+            estado.tanqueDiesel.purificadorAtivo = false;
+            adicionarLog('Purificador parado manualmente.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+        
+        function trocarFiltros(equipamento) {
+            saveToHistory();
+            if (equipamento === 'gerador') {
+                estado.gerador.filtrosCombustivel = 'Normal';
+                estado.gerador.pressaoCombustivel = 100;
+                estado.simulationTasks.dgFilterChanged = true; // NOVO
+                adicionarLog('Filtros de combustível do DIESEL-GERADOR trocados.');
+            } else if (equipamento === 'motores') {
+                estado.motores.filtrosCombustivel = 'Normal';
+                estado.motores.pressaoCombustivel = 100;
+                estado.simulationTasks.mcpFilterChanged = true; // NOVO
+                adicionarLog('Filtros de combustível dos motores principais trocados.');
+            }
+            checkSimulationEnd();
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function iniciarRecebimento() {
+            const tanqueDestino = document.getElementById('recebimentoTanqueSelect').value;
+
+            if (tanqueDestino === '') {
+                mostrarAlerta('Selecione um tanque para receber o óleo.', 'error');
+                return;
+            }
+            if (estado.tanqueDiesel.recebimentoAtivo) {
+                mostrarAlerta('O recebimento de óleo já está em andamento.', 'warning');
+                return;
+            }
+            if (estado.tanqueDiesel.niveis[tanqueDestino] >= 90) {
+                 mostrarAlerta(`O tanque de destino ${tanqueDestino} já está no limite de 90%. Não é possível receber mais óleo.`, 'warning');
+                 return;
+            }
+            saveToHistory();
+            estado.tanqueDiesel.recebimentoAtivo = true;
+            estado.tanqueDiesel.recebimentoTanque = tanqueDestino;
+            adicionarLog(`Iniciando recebimento de óleo para o tanque ${tanqueDestino}.`);
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function pararRecebimento() {
+             if (!estado.tanqueDiesel.recebimentoAtivo) {
+                mostrarAlerta('O recebimento de óleo já está parado.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.tanqueDiesel.recebimentoAtivo = false;
+            adicionarLog('Recebimento de óleo parado manualmente.');
+            if (estado.simulationStage === 'ABASTECIMENTO_FINAL') {
+                estado.simulationTasks.finalRefuelDone = true;
+                checkSimulationEnd();
+            }
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function iniciarTransferenciaAgua() {
+            const fonteAgua = document.getElementById('fonteAguaSelect').value;
+            if (fonteAgua === '') {
+                mostrarAlerta('Selecione a fonte de água para a transferência.', 'error');
+                return;
+            }
+            if (estado.tanqueAgua.nivelProa >= 90 && fonteAgua !== 'porto') {
+                mostrarAlerta('O tanque de água da proa já está cheio.', 'warning');
+                return;
+            }
+            if (fonteAgua === 'tanquePotavel') {
+                if (estado.tanqueAgua.nivelPotavel < 1) {
+                     mostrarAlerta('O tanque de água potável está vazio. Não é possível transferir.', 'error');
+                     return;
+                }
+            }
+            saveToHistory();
+            estado.tanqueAgua.transferindo = true;
+            adicionarLog(`Iniciando transferência de água do(a) ${fonteAgua}.`);
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function pararTransferenciaAgua() {
+            if (!estado.tanqueAgua.transferindo) {
+                mostrarAlerta('A transferência de água já está parada.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.tanqueAgua.transferindo = false;
+            adicionarLog('Transferência de água parada manualmente.');
+             if (estado.simulationStage === 'ABASTECIMENTO_FINAL' && document.getElementById('fonteAguaSelect').value === 'porto') {
+                estado.simulationTasks.finalWaterIntakeDone = true;
+                checkSimulationEnd();
+            }
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+        
+        function iniciarRecebimentoAguaDoPorto() {
+            if (estado.tanqueAgua.recebendo) {
+                mostrarAlerta('O recebimento de água do porto já está em andamento.', 'warning');
+                return;
+            }
+            if (estado.tanqueAgua.nivelPotavel >= 90) {
+                mostrarAlerta('O tanque de água potável já está no limite de 90%.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.tanqueAgua.recebendo = true;
+            adicionarLog('Iniciando recebimento de água do porto para o tanque potável.');
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+        
+        function pararRecebimentoAguaDoPorto() {
+             if (!estado.tanqueAgua.recebendo) {
+                mostrarAlerta('O recebimento de água do porto já está parado.', 'warning');
+                return;
+            }
+            saveToHistory();
+            estado.tanqueAgua.recebendo = false;
+            adicionarLog('Recebimento de água do porto parado manualmente.');
+            if (estado.simulationStage === 'ABASTECIMENTO_FINAL') {
+                estado.simulationTasks.finalWaterIntakeDone = true;
+                checkSimulationEnd();
+            }
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+
+        function toggleValvulaComunicacao() {
+            saveToHistory();
+            estado.tanqueDiesel.valvulaComunicaoAberta = !estado.tanqueDiesel.valvulaComunicaoAberta;
+            
+            if (estado.tanqueDiesel.valvulaComunicaoAberta) {
+                const nivelMedio = (estado.tanqueDiesel.niveis.servicoBB + estado.tanqueDiesel.niveis.servicoBE) / 2;
+                estado.tanqueDiesel.niveis.servicoBB = nivelMedio;
+                estado.tanqueDiesel.niveis.servicoBE = nivelMedio;
+                adicionarLog('Válvula de comunicação entre tanques de serviço de diesel aberta. Níveis igualados.');
+            } else {
+                adicionarLog('Válvula de comunicação entre tanques de serviço de diesel fechada.');
+            }
+            atualizarInterface();
+            playSound(440, 0.1);
+        }
+        
+        function initializeNewState() {
+            estado = JSON.parse(initialStateJSON);
+            const randomLevel = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+            estado.tanqueDiesel.niveis.servicoBB = randomLevel(10, 50);
+            estado.tanqueDiesel.niveis.servicoBE = randomLevel(10, 50);
+            estado.tanqueAgua.nivelProa = randomLevel(30, 90);
+            estado.oleoLubrificante.carter.dg_bb = randomLevel(50, 85);
+            estado.oleoLubrificante.carter.dg_be = randomLevel(50, 85);
+            estado.oleoLubrificante.carter.mcp_bb = randomLevel(50, 85);
+            estado.oleoLubrificante.carter.mcp_be = randomLevel(50, 85);
+            estado.oleoLubrificante.liquidoArrefecimento.dg_bb = randomLevel(60, 95);
+            estado.oleoLubrificante.liquidoArrefecimento.dg_be = randomLevel(60, 95);
+            estado.oleoLubrificante.liquidoArrefecimento.mcp_bb = randomLevel(60, 95);
+            estado.oleoLubrificante.liquidoArrefecimento.mcp_be = randomLevel(60, 95);
+        }
+
+        function startSimulation() {
+            localStorage.setItem('sim_started_before', 'true');
+            document.getElementById('welcomeModal').classList.add('hidden');
+            resetSimulator();
+        }
+
+        function resetSimulator() {
+            if (timerId) clearInterval(timerId);
+            
+            localStorage.removeItem('simuladorEstado');
+            initializeNewState();
+            
+            document.getElementById('logAcoes').innerHTML = '';
+            document.getElementById('errorLog').innerHTML = '';
+            
+            adicionarLog('Simulação reiniciada.');
+            atualizarInterface();
+            iniciarTimer();
+            
+            const endModal = document.getElementById('endModal');
+            endModal.classList.add('hidden');
+            endModal.classList.remove('flex');
+            playSound(330, 0.15);
+        }
+
+        function togglePause() {
+            estado.isPaused = !estado.isPaused;
+            const overlay = document.getElementById('pauseOverlay');
+            overlay.classList.toggle('hidden');
+            overlay.classList.toggle('flex');
+            const btn = document.getElementById('pauseBtn');
+            const icon = estado.isPaused ? '#icon-play' : '#icon-pause';
+            btn.innerHTML = `<svg width="24" height="24" class="stroke-current"><use href="${icon}"/></svg>`;
+            adicionarLog(estado.isPaused ? 'Simulação pausada.' : 'Simulação retomada.');
+            playSound(330, 0.1);
+        }
+
+        function toggleDarkMode() {
+            const body = document.getElementById('body');
+            body.classList.toggle('dark');
+            const isDark = body.classList.contains('dark');
+            const themeToggle = document.getElementById('themeToggle');
+            const icon = isDark ? '#icon-sun' : '#icon-moon';
+            themeToggle.innerHTML = `<svg width="24" height="24" class="stroke-current"><use href="${icon}"/></svg>`;
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            adicionarLog(isDark ? 'Modo escuro ativado.' : 'Modo claro ativado.');
+            playSound(440, 0.1);
+        }
+
+        // Inicializar o simulador
+        window.onload = () => {
+            const savedTheme = localStorage.getItem('theme');
+            const themeToggle = document.getElementById('themeToggle');
+            if (savedTheme === 'dark') {
+                document.getElementById('body').classList.add('dark');
+                themeToggle.innerHTML = `<svg width="24" height="24" class="stroke-current"><use href="#icon-sun"/></svg>`;
+            } else {
+                themeToggle.innerHTML = `<svg width="24" height="24" class="stroke-current"><use href="#icon-moon"/></svg>`;
+            }
+
+            if (localStorage.getItem('sim_started_before')) {
+                document.getElementById('welcomeModal').classList.add('hidden');
+                carregarEstado();
+            } else {
+                 document.getElementById('welcomeModal').classList.remove('hidden');
+                 document.getElementById('welcomeModal').classList.add('flex');
+            }
+
+            themeToggle.addEventListener('click', toggleDarkMode);
+
+            document.getElementById('alertModal').addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    document.getElementById('alertModal').querySelector('button').focus();
+                }
+            });
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !document.getElementById('alertModal').classList.contains('hidden')) {
+                closeAlert();
+            }
+        });
+    </script>
+</body>
+</html>

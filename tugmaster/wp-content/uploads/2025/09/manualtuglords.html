@@ -1,0 +1,329 @@
+<!-- Chosen Palette: Warm Neutrals & Cyan -->
+<!-- Application Structure Plan: The SPA uses a tabbed navigation structure ("Doutrina da Companhia", "Arquétipos Estratégicos", "Análise Tática") to break down the dense manual into digestible, interactive themes. This architecture is chosen over a linear document to promote non-linear exploration and direct comparison, which is key to understanding strategic options. The core interaction is the "Arquétipos" section, where users can select a strategy and see its stats update in text and on a radar chart, facilitating rapid analysis. This design transforms passive reading into an active learning and decision-support tool for players. -->
+<!-- Visualization & Content Choices: 
+- Company Identity: Goal=Inform -> Presentation=Styled HTML cards with icons -> Interaction=Hover highlight -> Justification=Clear, scannable presentation of core concepts. Method=HTML/CSS.
+- Strategic Doctrines: Goal=Compare/Analyze -> Presentation=Interactive Tabs + Dynamic Text + Radar Chart -> Interaction=Click to update content and chart -> Justification=The radar chart provides an immediate, powerful visual summary of each strategy's trade-offs, making complex data easy to compare. Library=Chart.js on Canvas.
+- Epic Victory Analysis: Goal=Organize/Inform -> Presentation=HTML/CSS diagram -> Interaction=Hover effects on nodes -> Justification=Visually represents the synergy between victory conditions, making the strategic path clearer than plain text. Method=HTML/CSS.
+-->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual do Comandante: TUGLIFE MONOPOLY "TUGLORDS"</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .nav-btn {
+            transition: all 0.3s ease;
+            border-bottom: 4px solid transparent;
+        }
+        .nav-btn.active {
+            border-bottom-color: #0891b2;
+            color: #0e7490;
+        }
+        .doctrine-btn {
+            transition: all 0.3s ease;
+        }
+        .doctrine-btn.active {
+            background-color: #0e7490;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(14, 116, 144, 0.3);
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .value-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .synergy-arrow {
+            content: '→';
+            font-size: 2rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto max-w-7xl px-4 py-8 sm:py-12">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">TUGLIFE MONOPOLY "TUGLORDS"</h1>
+            <p class="mt-3 text-lg text-slate-600 max-w-3xl mx-auto">Manual interativo para o domínio marítimo e análise tática de comando.</p>
+        </header>
+
+        <main>
+            <div class="border-b border-slate-200 mb-8">
+                <nav class="-mb-px flex justify-center space-x-4 md:space-x-8" aria-label="Tabs">
+                    <button id="nav-btn-identity" class="nav-btn whitespace-nowrap py-4 px-1 font-bold text-slate-500 hover:text-cyan-700 active">
+                        Doutrina da Companhia
+                    </button>
+                    <button id="nav-btn-doctrines" class="nav-btn whitespace-nowrap py-4 px-1 font-bold text-slate-500 hover:text-cyan-700">
+                        Arquétipos Estratégicos
+                    </button>
+                    <button id="nav-btn-victory" class="nav-btn whitespace-nowrap py-4 px-1 font-bold text-slate-500 hover:text-cyan-700">
+                        Análise da Vitória Épica
+                    </button>
+                </nav>
+            </div>
+
+            <div id="content-identity" class="content-section active">
+                <div class="text-center mb-12">
+                     <h2 class="text-3xl font-bold tracking-tight text-slate-900">Seção 1: A Identidade da Sua Companhia</h2>
+                     <p class="mt-2 text-md text-slate-600">Toda grande organização é guiada por um propósito claro. Entenda a filosofia que o levará à vitória.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                        <h3 class="text-xl font-bold text-cyan-800 mb-2">Nossa Missão</h3>
+                        <p class="text-slate-600">Alcançar a **supremacia marítima inquestionável**. Nosso objetivo é nos tornarmos a força dominante em todos os portos, controlando a logística, a tecnologia e o fluxo de capital. A concorrência deve ser vencida e absorvida.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                        <h3 class="text-xl font-bold text-cyan-800 mb-2">Nossa Visão</h3>
+                        <p class="text-slate-600">Ser a frota mais **tecnologicamente avançada, financeiramente robusta e operacionalmente impecável** do setor. Aspiramos a um estado onde nossa eficiência é tão alta que as operações dos concorrentes se tornam insustentáveis em comparação.</p>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-bold text-center text-slate-900 mb-6">Nossos Valores</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="value-card bg-white p-6 rounded-xl shadow-md border border-slate-100 transition-all duration-300">
+                        <h4 class="font-bold text-lg mb-2">Eficiência Implacável</h4>
+                        <p class="text-sm text-slate-600">Cada dólar, cada movimento, cada ativo deve servir a um propósito estratégico. Desperdício é o primeiro passo para a falência.</p>
+                    </div>
+                    <div class="value-card bg-white p-6 rounded-xl shadow-md border border-slate-100 transition-all duration-300">
+                        <h4 class="font-bold text-lg mb-2">Inovação Tática</h4>
+                        <p class="text-sm text-slate-600">A tecnologia (certificados, oficinas) não é uma despesa, é um multiplicador de força. Dominar a tecnologia é dominar o futuro do jogo.</p>
+                    </div>
+                    <div class="value-card bg-white p-6 rounded-xl shadow-md border border-slate-100 transition-all duration-300">
+                        <h4 class="font-bold text-lg mb-2">Audácia Calculada</h4>
+                        <p class="text-sm text-slate-600">Use o capital, inclusive o crédito (empréstimos), como uma arma para expandir agressivamente quando a oportunidade surgir.</p>
+                    </div>
+                    <div class="value-card bg-white p-6 rounded-xl shadow-md border border-slate-100 transition-all duration-300">
+                        <h4 class="font-bold text-lg mb-2">Resiliência Operacional</h4>
+                        <p class="text-sm text-slate-600">Uma companhia forte é aquela que tem profundidade para atravessar qualquer tempestade e emergir mais forte.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-doctrines" class="content-section">
+                 <div class="text-center mb-12">
+                     <h2 class="text-3xl font-bold tracking-tight text-slate-900">Seção 2: Doutrinas Estratégicas para a Vitória</h2>
+                     <p class="mt-2 text-md text-slate-600">Não existe um único caminho para a vitória. Analise as filosofias de comando e escolha sua abordagem.</p>
+                </div>
+
+                <div class="flex justify-center flex-wrap gap-2 md:gap-4 mb-8">
+                    <button class="doctrine-btn active py-2 px-5 font-semibold rounded-full bg-white text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-100" data-doctrine="barao">Barão Portuário</button>
+                    <button class="doctrine-btn py-2 px-5 font-semibold rounded-full bg-white text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-100" data-doctrine="inovador">Inovador Tecnológico</button>
+                    <button class="doctrine-btn py-2 px-5 font-semibold rounded-full bg-white text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-100" data-doctrine="lobo">Lobo do Mar</button>
+                    <button class="doctrine-btn py-2 px-5 font-semibold rounded-full bg-white text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-100" data-doctrine="versatil">Comandante Versátil</button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-100">
+                        <h3 id="doctrine-title" class="text-2xl font-bold text-cyan-900 mb-4"></h3>
+                        <div class="space-y-4 text-slate-600">
+                            <div>
+                                <h4 class="font-semibold text-slate-800">Foco:</h4>
+                                <p id="doctrine-focus"></p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-slate-800">Prós:</h4>
+                                <p id="doctrine-pros"></p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-slate-800">Contras:</h4>
+                                <p id="doctrine-contras"></p>
+                            </div>
+                            <div class="pt-2">
+                                <p id="doctrine-vision" class="font-mono text-sm italic text-cyan-800 bg-cyan-50 p-3 rounded-lg"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-lg border border-slate-100 chart-container h-[400px] md:h-[450px]">
+                        <canvas id="doctrineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-victory" class="content-section">
+                <div class="text-center mb-12">
+                     <h2 class="text-3xl font-bold tracking-tight text-slate-900">Seção 3: Decodificando a Vitória Épica</h2>
+                     <p class="mt-2 text-md text-slate-600">A Vitória Épica é uma declaração de domínio. Entenda como seus sistemas devem operar em harmonia.</p>
+                </div>
+
+                <div class="space-y-8">
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">Pense em Sinergia</h3>
+                        <p class="text-slate-600 mb-4">Não persiga os 5 objetivos isoladamente. Eles se conectam e se alimentam. A **Infraestrutura Total** (Estaleiro) permite que você construa a **Frota Completa**. A **Frota Completa**, com os certificados do **Salvamento Oceânico**, permite que você domine os contratos e acumule o dinheiro para a **Supremacia Econômica**. O **Domínio Portuário** financia tudo isso.</p>
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-center text-sm font-semibold text-slate-700 flex-wrap">
+                            <div class="bg-slate-100 p-2 rounded-lg">Domínio Portuário</div>
+                            <div class="synergy-arrow">↓</div>
+                            <div class="bg-cyan-100 text-cyan-900 p-2 rounded-lg">Infraestrutura + Certificados</div>
+                             <div class="synergy-arrow">→</div>
+                            <div class="bg-slate-100 p-2 rounded-lg">Frota Completa</div>
+                            <div class="synergy-arrow">↓</div>
+                             <div class="bg-cyan-100 text-cyan-900 p-2 rounded-lg">Supremacia Econômica</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                            <h3 class="text-xl font-bold text-slate-800 mb-2">O Estaleiro é o Coração</h3>
+                            <p class="text-slate-600">A nova mecânica de docagem não é uma punição, é um teste de planejamento. Uma frota maior significa mais poder, mas também mais tempo e custo de manutenção. Gerencie o ciclo de docagem com sabedoria para não ser pego com sua frota principal em reparos durante um momento crítico.</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                            <h3 class="text-xl font-bold text-slate-800 mb-2">A Frota Operacional é o que Conta</h3>
+                            <p class="text-slate-600">Lembre-se, um rebocador na doca seca não conta para a Vitória Épica. O timing do seu "sprint" final para a vitória deve levar em conta o status da sua frota. A vitória exige não apenas ativos, mas prontidão operacional.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navButtons = {
+                identity: document.getElementById('nav-btn-identity'),
+                doctrines: document.getElementById('nav-btn-doctrines'),
+                victory: document.getElementById('nav-btn-victory'),
+            };
+
+            const contentSections = {
+                identity: document.getElementById('content-identity'),
+                doctrines: document.getElementById('content-doctrines'),
+                victory: document.getElementById('content-victory'),
+            };
+
+            const doctrineButtons = document.querySelectorAll('.doctrine-btn');
+            
+            const doctrineData = {
+                barao: {
+                    title: 'A Doutrina do "Barão Portuário"',
+                    focus: 'Aquisição massiva e monopolização de portos. O objetivo é criar uma "rede de estrangulamento" econômica.',
+                    pros: 'Fluxo de caixa constante e previsível. Exerce pressão financeira contínua sobre os oponentes.',
+                    contras: 'Alto consumo de capital inicial, deixando-o vulnerável a crises de liquidez e eventos inesperados.',
+                    vision: '"Se eles precisam atracar, eles precisam me pagar."',
+                    chartData: [5, 2, 2, 3, 5]
+                },
+                inovador: {
+                    title: 'A Doutrina do "Inovador Tecnológico"',
+                    focus: 'Priorizar a aquisição de todas as oficinas e certificados de treinamento antes de grandes investimentos em portos.',
+                    pros: 'Posiciona você perfeitamente para uma Vitória Épica no final do jogo. Cada certificado adquirido é um passo que seus oponentes também terão que dar.',
+                    contras: 'Baixa geração de renda no início do jogo. Você aposta tudo na vitória de longo prazo.',
+                    vision: '"A melhor frota não é a maior, é a mais qualificada."',
+                    chartData: [1, 5, 2, 4, 3]
+                },
+                lobo: {
+                    title: 'A Doutrina do "Lobo do Mar"',
+                    focus: 'Manter alta liquidez, usar empréstimos de forma agressiva e forçar os oponentes a pagarem taxas exorbitantes em momentos de fraqueza.',
+                    pros: 'Flexibilidade máxima. Capacidade de eliminar um oponente enfraquecido rapidamente.',
+                    contras: 'Estratégia de altíssimo risco. Um erro de cálculo ou uma sequência de má sorte pode levar à sua própria implosão financeira.',
+                    vision: '"O dinheiro não é para ser guardado, é para ser usado como arma."',
+                    chartData: [2, 3, 5, 5, 2]
+                },
+                versatil: {
+                    title: 'A Doutrina do "Comandante Versátil"',
+                    focus: 'Uma abordagem híbrida. Adquirir um conjunto de portos para garantir um fluxo de caixa base, investir em certificados e manter uma reserva de capital.',
+                    pros: 'A mais resiliente das estratégias. Dificilmente é pega de surpresa e pode se adaptar ao fluxo do jogo.',
+                    contras: 'Por não se especializar, pode ser superada no curto prazo por um jogador que executa uma estratégia focada com perfeição.',
+                    vision: '"Esteja preparado para qualquer vento, para qualquer maré."',
+                    chartData: [3, 4, 4, 1, 4]
+                }
+            };
+            
+            const chartCtx = document.getElementById('doctrineChart').getContext('2d');
+            const chartLabels = ['Renda Passiva', 'Potencial de V. Épica', 'Flexibilidade Tática', 'Risco Assumido', 'Controle de Jogo'];
+            let doctrineChart = new Chart(chartCtx, {
+                type: 'radar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Atributos da Doutrina',
+                        data: [],
+                        backgroundColor: 'rgba(14, 116, 144, 0.2)',
+                        borderColor: 'rgb(14, 116, 144)',
+                        pointBackgroundColor: 'rgb(14, 116, 144)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(14, 116, 144)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            pointLabels: { 
+                                font: { size: 12, weight: 'bold' },
+                                color: '#475569' 
+                            },
+                            ticks: {
+                                backdropColor: 'rgba(255, 255, 255, 0.75)',
+                                color: '#64748b',
+                                stepSize: 1
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 5
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            function updateDoctrineView(doctrineKey) {
+                const data = doctrineData[doctrineKey];
+                document.getElementById('doctrine-title').textContent = data.title;
+                document.getElementById('doctrine-focus').textContent = data.focus;
+                document.getElementById('doctrine-pros').textContent = data.pros;
+                document.getElementById('doctrine-contras').textContent = data.contras;
+                document.getElementById('doctrine-vision').textContent = data.vision;
+
+                doctrineChart.data.datasets[0].data = data.chartData;
+                doctrineChart.update();
+
+                doctrineButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.doctrine === doctrineKey);
+                });
+            }
+
+            function switchTab(targetTab) {
+                Object.values(navButtons).forEach(btn => btn.classList.remove('active'));
+                Object.values(contentSections).forEach(sec => sec.classList.remove('active'));
+
+                navButtons[targetTab].classList.add('active');
+                contentSections[targetTab].classList.add('active');
+            }
+            
+            navButtons.identity.addEventListener('click', () => switchTab('identity'));
+            navButtons.doctrines.addEventListener('click', () => switchTab('doctrines'));
+            navButtons.victory.addEventListener('click', () => switchTab('victory'));
+
+            doctrineButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    updateDoctrineView(button.dataset.doctrine);
+                });
+            });
+
+            updateDoctrineView('barao');
+        });
+    </script>
+</body>
+</html>

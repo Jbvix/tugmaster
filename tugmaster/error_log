@@ -1,0 +1,306 @@
+[13-Aug-2025 02:15:01 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:01 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:01 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/c62gtwye66po/public_html/wp-blog-header.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/c62gtwye66po/public_html/index.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:03 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:03 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:03 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/c62gtwye66po/public_html/wp-blog-header.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/c62gtwye66po/public_html/index.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:05 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:05 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:05 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/c62gtwye66po/public_html/wp-blog-header.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/c62gtwye66po/public_html/index.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:06 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:06 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:06 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/c62gtwye66po/public_html/wp-blog-header.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/c62gtwye66po/public_html/index.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:07 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:07 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:07 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/c62gtwye66po/public_html/wp-blog-header.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/c62gtwye66po/public_html/index.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:07 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:07 UTC] PHP Warning:  require(/home/c62gtwye66po/public_html/wp-blog-header.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/index.php on line 17
+[13-Aug-2025 02:15:07 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/c62gtwye66po/public_html/wp-blog-header.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/c62gtwye66po/public_html/index.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/c62gtwye66po/public_html/index.php on line 17
+[17-Sep-2025 12:15:39 UTC] PHP Warning:  Undefined variable $user_login in /home/c62gtwye66po/public_html/tugmaster/wp-login.php on line 1515
+[17-Sep-2025 12:15:39 UTC] PHP Warning:  Undefined variable $user_login in /home/c62gtwye66po/public_html/tugmaster/wp-login.php on line 1599
+[17-Sep-2025 12:15:39 UTC] PHP Warning:  Undefined variable $error in /home/c62gtwye66po/public_html/tugmaster/wp-login.php on line 1621
+[17-Sep-2025 13:24:16 UTC] PHP Fatal error:  Uncaught Error: Object of class WP_User could not be converted to string in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php:205
+Stack trace:
+#0 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): WPUM_Avatars->set_default_avatar()
+#1 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4571): apply_filters()
+#3 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4322): get_avatar_data()
+#4 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(1283): get_avatar_url()
+#5 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(1107): rest_get_avatar_urls()
+#6 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(382): WP_REST_Users_Controller->prepare_item_for_response()
+#7 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1292): WP_REST_Users_Controller->get_items()
+#8 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1125): WP_REST_Server->respond_to_request()
+#9 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(439): WP_REST_Server->dispatch()
+#10 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(459): WP_REST_Server->serve_request()
+#11 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): rest_api_loaded()
+#12 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#13 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(565): WP_Hook->do_action()
+#14 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(418): do_action_ref_array()
+#15 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(818): WP->parse_request()
+#16 /home/c62gtwye66po/public_html/tugmaster/wp-includes/functions.php(1342): WP->main()
+#17 /home/c62gtwye66po/public_html/tugmaster/wp-blog-header.php(16): wp()
+#18 /home/c62gtwye66po/public_html/tugmaster/index.php(17): require('/home/c62gtwye6...')
+#19 {main}
+  thrown in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php on line 205
+[17-Sep-2025 13:24:16 UTC] PHP Fatal error:  Uncaught Error: Object of class WP_User could not be converted to string in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php:205
+Stack trace:
+#0 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): WPUM_Avatars->set_default_avatar()
+#1 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4571): apply_filters()
+#3 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4322): get_avatar_data()
+#4 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(1283): get_avatar_url()
+#5 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(1107): rest_get_avatar_urls()
+#6 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(382): WP_REST_Users_Controller->prepare_item_for_response()
+#7 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1292): WP_REST_Users_Controller->get_items()
+#8 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1125): WP_REST_Server->respond_to_request()
+#9 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(439): WP_REST_Server->dispatch()
+#10 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(459): WP_REST_Server->serve_request()
+#11 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): rest_api_loaded()
+#12 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#13 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(565): WP_Hook->do_action()
+#14 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(418): do_action_ref_array()
+#15 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(818): WP->parse_request()
+#16 /home/c62gtwye66po/public_html/tugmaster/wp-includes/functions.php(1342): WP->main()
+#17 /home/c62gtwye66po/public_html/tugmaster/wp-blog-header.php(16): wp()
+#18 /home/c62gtwye66po/public_html/tugmaster/index.php(17): require('/home/c62gtwye6...')
+#19 {main}
+  thrown in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php on line 205
+[17-Sep-2025 13:37:00 UTC] PHP Fatal error:  Uncaught Error: Object of class WP_User could not be converted to string in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php:205
+Stack trace:
+#0 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): WPUM_Avatars->set_default_avatar()
+#1 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4571): apply_filters()
+#3 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4322): get_avatar_data()
+#4 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(1283): get_avatar_url()
+#5 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(1107): rest_get_avatar_urls()
+#6 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(382): WP_REST_Users_Controller->prepare_item_for_response()
+#7 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1292): WP_REST_Users_Controller->get_items()
+#8 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1125): WP_REST_Server->respond_to_request()
+#9 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(439): WP_REST_Server->dispatch()
+#10 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(459): WP_REST_Server->serve_request()
+#11 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): rest_api_loaded()
+#12 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#13 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(565): WP_Hook->do_action()
+#14 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(418): do_action_ref_array()
+#15 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(818): WP->parse_request()
+#16 /home/c62gtwye66po/public_html/tugmaster/wp-includes/functions.php(1342): WP->main()
+#17 /home/c62gtwye66po/public_html/tugmaster/wp-blog-header.php(16): wp()
+#18 /home/c62gtwye66po/public_html/tugmaster/index.php(17): require('/home/c62gtwye6...')
+#19 {main}
+  thrown in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php on line 205
+[17-Sep-2025 13:37:00 UTC] PHP Fatal error:  Uncaught Error: Object of class WP_User could not be converted to string in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php:205
+Stack trace:
+#0 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): WPUM_Avatars->set_default_avatar()
+#1 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4571): apply_filters()
+#3 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4322): get_avatar_data()
+#4 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(1283): get_avatar_url()
+#5 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(1107): rest_get_avatar_urls()
+#6 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(382): WP_REST_Users_Controller->prepare_item_for_response()
+#7 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1292): WP_REST_Users_Controller->get_items()
+#8 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1125): WP_REST_Server->respond_to_request()
+#9 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(439): WP_REST_Server->dispatch()
+#10 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(459): WP_REST_Server->serve_request()
+#11 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): rest_api_loaded()
+#12 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#13 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(565): WP_Hook->do_action()
+#14 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(418): do_action_ref_array()
+#15 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(818): WP->parse_request()
+#16 /home/c62gtwye66po/public_html/tugmaster/wp-includes/functions.php(1342): WP->main()
+#17 /home/c62gtwye66po/public_html/tugmaster/wp-blog-header.php(16): wp()
+#18 /home/c62gtwye66po/public_html/tugmaster/index.php(17): require('/home/c62gtwye6...')
+#19 {main}
+  thrown in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php on line 205
+[17-Sep-2025 13:37:36 UTC] PHP Fatal error:  Uncaught Error: Object of class WP_User could not be converted to string in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php:205
+Stack trace:
+#0 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): WPUM_Avatars->set_default_avatar()
+#1 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4571): apply_filters()
+#3 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4322): get_avatar_data()
+#4 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(1283): get_avatar_url()
+#5 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(1107): rest_get_avatar_urls()
+#6 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(382): WP_REST_Users_Controller->prepare_item_for_response()
+#7 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1292): WP_REST_Users_Controller->get_items()
+#8 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1125): WP_REST_Server->respond_to_request()
+#9 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(439): WP_REST_Server->dispatch()
+#10 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(459): WP_REST_Server->serve_request()
+#11 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): rest_api_loaded()
+#12 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#13 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(565): WP_Hook->do_action()
+#14 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(418): do_action_ref_array()
+#15 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(818): WP->parse_request()
+#16 /home/c62gtwye66po/public_html/tugmaster/wp-includes/functions.php(1342): WP->main()
+#17 /home/c62gtwye66po/public_html/tugmaster/wp-blog-header.php(16): wp()
+#18 /home/c62gtwye66po/public_html/tugmaster/index.php(17): require('/home/c62gtwye6...')
+#19 {main}
+  thrown in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php on line 205
+[17-Sep-2025 13:37:36 UTC] PHP Fatal error:  Uncaught Error: Object of class WP_User could not be converted to string in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php:205
+Stack trace:
+#0 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): WPUM_Avatars->set_default_avatar()
+#1 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4571): apply_filters()
+#3 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4322): get_avatar_data()
+#4 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(1283): get_avatar_url()
+#5 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(1107): rest_get_avatar_urls()
+#6 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(382): WP_REST_Users_Controller->prepare_item_for_response()
+#7 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1292): WP_REST_Users_Controller->get_items()
+#8 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1125): WP_REST_Server->respond_to_request()
+#9 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(439): WP_REST_Server->dispatch()
+#10 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(459): WP_REST_Server->serve_request()
+#11 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): rest_api_loaded()
+#12 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#13 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(565): WP_Hook->do_action()
+#14 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(418): do_action_ref_array()
+#15 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(818): WP->parse_request()
+#16 /home/c62gtwye66po/public_html/tugmaster/wp-includes/functions.php(1342): WP->main()
+#17 /home/c62gtwye66po/public_html/tugmaster/wp-blog-header.php(16): wp()
+#18 /home/c62gtwye66po/public_html/tugmaster/index.php(17): require('/home/c62gtwye6...')
+#19 {main}
+  thrown in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php on line 205
+[18-Sep-2025 02:49:28 UTC] PHP Fatal error:  Uncaught Error: Object of class WP_User could not be converted to string in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php:205
+Stack trace:
+#0 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): WPUM_Avatars->set_default_avatar()
+#1 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4571): apply_filters()
+#3 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4322): get_avatar_data()
+#4 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(1283): get_avatar_url()
+#5 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(1107): rest_get_avatar_urls()
+#6 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(382): WP_REST_Users_Controller->prepare_item_for_response()
+#7 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1292): WP_REST_Users_Controller->get_items()
+#8 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1125): WP_REST_Server->respond_to_request()
+#9 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(439): WP_REST_Server->dispatch()
+#10 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(459): WP_REST_Server->serve_request()
+#11 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): rest_api_loaded()
+#12 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#13 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(565): WP_Hook->do_action()
+#14 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(418): do_action_ref_array()
+#15 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(818): WP->parse_request()
+#16 /home/c62gtwye66po/public_html/tugmaster/wp-includes/functions.php(1342): WP->main()
+#17 /home/c62gtwye66po/public_html/tugmaster/wp-blog-header.php(16): wp()
+#18 /home/c62gtwye66po/public_html/tugmaster/index.php(17): require('/home/c62gtwye6...')
+#19 {main}
+  thrown in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php on line 205
+[18-Sep-2025 02:49:28 UTC] PHP Fatal error:  Uncaught Error: Object of class WP_User could not be converted to string in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php:205
+Stack trace:
+#0 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): WPUM_Avatars->set_default_avatar()
+#1 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4571): apply_filters()
+#3 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4322): get_avatar_data()
+#4 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(1283): get_avatar_url()
+#5 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(1107): rest_get_avatar_urls()
+#6 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(382): WP_REST_Users_Controller->prepare_item_for_response()
+#7 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1292): WP_REST_Users_Controller->get_items()
+#8 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1125): WP_REST_Server->respond_to_request()
+#9 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(439): WP_REST_Server->dispatch()
+#10 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(459): WP_REST_Server->serve_request()
+#11 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): rest_api_loaded()
+#12 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#13 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(565): WP_Hook->do_action()
+#14 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(418): do_action_ref_array()
+#15 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(818): WP->parse_request()
+#16 /home/c62gtwye66po/public_html/tugmaster/wp-includes/functions.php(1342): WP->main()
+#17 /home/c62gtwye66po/public_html/tugmaster/wp-blog-header.php(16): wp()
+#18 /home/c62gtwye66po/public_html/tugmaster/index.php(17): require('/home/c62gtwye6...')
+#19 {main}
+  thrown in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php on line 205
+[18-Sep-2025 02:59:08 UTC] PHP Fatal error:  Uncaught Error: Object of class WP_User could not be converted to string in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php:205
+Stack trace:
+#0 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): WPUM_Avatars->set_default_avatar()
+#1 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4571): apply_filters()
+#3 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4322): get_avatar_data()
+#4 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(1283): get_avatar_url()
+#5 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(1107): rest_get_avatar_urls()
+#6 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(844): WP_REST_Users_Controller->prepare_item_for_response()
+#7 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(875): WP_REST_Users_Controller->update_item()
+#8 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1292): WP_REST_Users_Controller->update_current_item()
+#9 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1125): WP_REST_Server->respond_to_request()
+#10 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(439): WP_REST_Server->dispatch()
+#11 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(459): WP_REST_Server->serve_request()
+#12 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): rest_api_loaded()
+#13 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#14 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(565): WP_Hook->do_action()
+#15 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(418): do_action_ref_array()
+#16 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(818): WP->parse_request()
+#17 /home/c62gtwye66po/public_html/tugmaster/wp-includes/functions.php(1342): WP->main()
+#18 /home/c62gtwye66po/public_html/tugmaster/wp-blog-header.php(16): wp()
+#19 /home/c62gtwye66po/public_html/tugmaster/index.php(17): require('/home/c62gtwye6...')
+#20 {main}
+  thrown in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php on line 205
+[18-Sep-2025 03:05:03 UTC] PHP Fatal error:  Uncaught Error: Object of class WP_User could not be converted to string in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php:205
+Stack trace:
+#0 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): WPUM_Avatars->set_default_avatar()
+#1 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4571): apply_filters()
+#3 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4322): get_avatar_data()
+#4 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(1283): get_avatar_url()
+#5 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(1107): rest_get_avatar_urls()
+#6 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(844): WP_REST_Users_Controller->prepare_item_for_response()
+#7 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(875): WP_REST_Users_Controller->update_item()
+#8 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1292): WP_REST_Users_Controller->update_current_item()
+#9 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1125): WP_REST_Server->respond_to_request()
+#10 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(439): WP_REST_Server->dispatch()
+#11 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(459): WP_REST_Server->serve_request()
+#12 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): rest_api_loaded()
+#13 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#14 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(565): WP_Hook->do_action()
+#15 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(418): do_action_ref_array()
+#16 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(818): WP->parse_request()
+#17 /home/c62gtwye66po/public_html/tugmaster/wp-includes/functions.php(1342): WP->main()
+#18 /home/c62gtwye66po/public_html/tugmaster/wp-blog-header.php(16): wp()
+#19 /home/c62gtwye66po/public_html/tugmaster/index.php(17): require('/home/c62gtwye6...')
+#20 {main}
+  thrown in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php on line 205
+[18-Sep-2025 03:06:58 UTC] PHP Fatal error:  Uncaught Error: Object of class WP_User could not be converted to string in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php:205
+Stack trace:
+#0 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): WPUM_Avatars->set_default_avatar()
+#1 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4571): apply_filters()
+#3 /home/c62gtwye66po/public_html/tugmaster/wp-includes/link-template.php(4322): get_avatar_data()
+#4 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(1283): get_avatar_url()
+#5 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(1107): rest_get_avatar_urls()
+#6 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(844): WP_REST_Users_Controller->prepare_item_for_response()
+#7 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php(875): WP_REST_Users_Controller->update_item()
+#8 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1292): WP_REST_Users_Controller->update_current_item()
+#9 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(1125): WP_REST_Server->respond_to_request()
+#10 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api/class-wp-rest-server.php(439): WP_REST_Server->dispatch()
+#11 /home/c62gtwye66po/public_html/tugmaster/wp-includes/rest-api.php(459): WP_REST_Server->serve_request()
+#12 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(324): rest_api_loaded()
+#13 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#14 /home/c62gtwye66po/public_html/tugmaster/wp-includes/plugin.php(565): WP_Hook->do_action()
+#15 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(418): do_action_ref_array()
+#16 /home/c62gtwye66po/public_html/tugmaster/wp-includes/class-wp.php(818): WP->parse_request()
+#17 /home/c62gtwye66po/public_html/tugmaster/wp-includes/functions.php(1342): WP->main()
+#18 /home/c62gtwye66po/public_html/tugmaster/wp-blog-header.php(16): wp()
+#19 /home/c62gtwye66po/public_html/tugmaster/index.php(17): require('/home/c62gtwye6...')
+#20 {main}
+  thrown in /home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-user-manager/includes/admin/class-wpum-avatars.php on line 205
+[15-Jan-2026 13:05:20 UTC] PHP Warning:  include_once(/home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-super-cache/wp-cache-phase1.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/tugmaster/wp-content/advanced-cache.php on line 22
+[15-Jan-2026 13:05:20 UTC] PHP Warning:  include_once(): Failed opening '/home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-super-cache/wp-cache-phase1.php' for inclusion (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/c62gtwye66po/public_html/tugmaster/wp-content/advanced-cache.php on line 22
+[15-Jan-2026 13:05:22 UTC] PHP Warning:  include_once(/home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-super-cache/wp-cache-phase1.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/tugmaster/wp-content/advanced-cache.php on line 22
+[15-Jan-2026 13:05:22 UTC] PHP Warning:  include_once(): Failed opening '/home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-super-cache/wp-cache-phase1.php' for inclusion (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/c62gtwye66po/public_html/tugmaster/wp-content/advanced-cache.php on line 22
+[15-Jan-2026 13:05:30 UTC] PHP Warning:  include_once(/home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-super-cache/wp-cache-phase1.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/tugmaster/wp-content/advanced-cache.php on line 22
+[15-Jan-2026 13:05:30 UTC] PHP Warning:  include_once(): Failed opening '/home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-super-cache/wp-cache-phase1.php' for inclusion (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/c62gtwye66po/public_html/tugmaster/wp-content/advanced-cache.php on line 22
+[15-Jan-2026 13:06:00 UTC] PHP Warning:  include_once(/home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-super-cache/wp-cache-phase1.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/tugmaster/wp-content/advanced-cache.php on line 22
+[15-Jan-2026 13:06:00 UTC] PHP Warning:  include_once(): Failed opening '/home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-super-cache/wp-cache-phase1.php' for inclusion (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/c62gtwye66po/public_html/tugmaster/wp-content/advanced-cache.php on line 22
+[15-Jan-2026 13:06:09 UTC] PHP Warning:  include_once(/home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-super-cache/wp-cache-phase1.php): Failed to open stream: No such file or directory in /home/c62gtwye66po/public_html/tugmaster/wp-content/advanced-cache.php on line 22
+[15-Jan-2026 13:06:09 UTC] PHP Warning:  include_once(): Failed opening '/home/c62gtwye66po/public_html/tugmaster/wp-content/plugins/wp-super-cache/wp-cache-phase1.php' for inclusion (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/c62gtwye66po/public_html/tugmaster/wp-content/advanced-cache.php on line 22
+[17-Mar-2026 00:16:56 UTC] Erro de evento de reagendamento do cron para o hook: mwai_tasks_internal_run, código de erro: invalid_schedule, mensagem de erro: O evento agendado não existe., dados: {"schedule":"one_minute","args":[],"interval":60}
