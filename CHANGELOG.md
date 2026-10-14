@@ -1,5 +1,13 @@
 # Histórico de Atualizações - TugLife Hub
 
+## [2.1] - 2026-10-14 — Jossian Brito (assistido por Claude)
+### Adicionado
+- Cards SISNAV COSTEIRO, NAVIEW e KRATOS, cada um com página de apresentação em `sistemas/` e cadeado de acesso ao admin de cada sistema.
+- Ano atualizado para 2026: rodapé (copyright), título da aba, descrição e cabeçalho principal.
+- WhatsApp (+55 85 99773-7230) no rodapé: ícone nas redes sociais e botão com mensagem pronta.
+### Alterado
+- admin.html / admin_dashboard.html passam a redirecionar para o SISNAV Admin (v2.0, 2026-10-13).
+
 ## [v2.1.0] - 2026-04-22
 
 ### Adicionado

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
+<head><meta charset="utf-8">
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TugLife Hub 2025 | Vida no Mar e Laboratório de Ideias</title>
-    <meta name="description" content="Central de simuladores marítimos e ferramentas do TugLife Lab 2025 focado em manobras portuárias, cálculos de viagem e tecnologia naval. Criado por Jossian Brito.">
+    <title>TugLife Hub 2026 | Vida no Mar e Laboratório de Ideias</title>
+    <meta name="description" content="Central de simuladores marítimos e ferramentas do TugLife Lab 2026 focado em manobras portuárias, cálculos de viagem e tecnologia naval. Criado por Jossian Brito.">
     
     <!-- Modern Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,7 +27,7 @@
             <img src="./assets/img/cropped-popeye-o-som-do-mar.png" alt="TugLife Lab Logo">
         </div>
         <div class="header-text">
-            <h1>TugLife Lab 2025</h1>
+            <h1>TugLife Lab 2026</h1>
             <h2>Jossian Brito</h2>
             <p>Vida no mar e Laboratório de Ideias</p>
         </div>
@@ -278,14 +278,40 @@
                 <div class="card-subtitle">Simulador de Equipamentos e Operações</div>
             </div>
         </a>
+            <!-- ===== v2.1 (2026-10-14) Sistemas com acesso restrito - Jossian Brito | Assistido por Claude =====
+             Cada card abre uma página de apresentação em ./sistemas/ com cadeado para o admin. -->
+        <a href="./sistemas/sisnav.html" class="nav-card">
+            <div class="card-icon"><i class="fas fa-map-location-dot"></i></div>
+            <div class="card-content">
+                <div class="card-title">SISNAV COSTEIRO</div>
+                <div class="card-subtitle">Navegação costeira · acesso restrito</div>
+            </div>
+        </a>
+        <a href="./sistemas/naview.html" class="nav-card">
+            <div class="card-icon"><i class="fas fa-layer-group"></i></div>
+            <div class="card-content">
+                <div class="card-title">NAVIEW</div>
+                <div class="card-subtitle">Cartas náuticas · acesso restrito</div>
+            </div>
+        </a>
+        <a href="./sistemas/kratos.html" class="nav-card">
+            <div class="card-icon"><i class="fas fa-brain"></i></div>
+            <div class="card-content">
+                <div class="card-title">KRATOS</div>
+                <div class="card-subtitle">Inteligência naval · acesso restrito</div>
+            </div>
+        </a>
     </main>
 
     <footer>
         <div class="social-links">
             <a href="https://www.linkedin.com/in/jossianbrito/" target="_blank" rel="noreferrer" class="social-link" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
             <a href="https://instagram.com/jossiancosta" target="_blank" rel="noreferrer" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="https://wa.me/5585997737230?text=Ol%C3%A1%2C%20Jossian!%20Vim%20pelo%20TugLife%20Lab." target="_blank" rel="noopener" class="social-link" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
         </div>
-        <p>&copy; 2025 TugLife Lab | Feito por Jossian Brito.</p>
+        <p>&copy; 2026 TugLife Lab | Feito por Jossian Brito.</p>
+        <!-- v2.1 (2026-10-14): contato direto pelo WhatsApp com mensagem pronta -->
+        <p style="margin-top:.9rem"><a href="https://wa.me/5585997737230?text=Ol%C3%A1%2C%20Jossian!%20Vim%20pelo%20TugLife%20Lab." target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;background:#25d366;color:#04210f;font-weight:700;text-decoration:none;padding:.6rem 1.1rem;border-radius:999px"><i class="fab fa-whatsapp"></i> Fale comigo: +55 85 99773-7230</a></p>
     </footer>
 
     <script>
@@ -346,6 +372,9 @@
             const cards = document.querySelectorAll('.nav-card');
             
             const categoryMap = {
+            "SISNAV COSTEIRO": "navegacao", // v2.1
+            "NAVIEW": "navegacao", // v2.1
+            "KRATOS": "gestao", // v2.1
                 "ASD TUG SIM V1": "manobra",
                 "ASD TUG SIM V2": "manobra",
                 "ASD TUG SIM V3": "manobra",
