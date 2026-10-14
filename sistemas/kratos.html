@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+  sistemas/kratos.html - Página de apresentação: KRATOS
+  Portal TUGLIFE LAB (tuglife.live/tugmaster)
+  Autor: Jossian Brito (Charlie Bravo) | Assistido por Claude
+  Data: 2026-10-14   Versão: 1.0
+  Modificações v1.0: página criada - apresentação do sistema, cadeado de
+  acesso administrativo (https://tuglife.live/aisstream/admin) e botão de contato via WhatsApp.
+  Nenhum dado sensível nesta página: o acesso real é validado no servidor
+  de cada sistema.
+====================================================================== -->
+<html lang="pt-BR">
+<head><meta charset="utf-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KRATOS | TugLife Lab</title>
+<meta name="description" content="Inteligência Naval Estratégica">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{--bg:#070e17;--glass:rgba(16,25,36,.55);--border:rgba(90,180,255,.15);--txt:#e2f1ff;--muted:#85a3c2;--cyan:#00ccff;--orange:#ff9d00;--wa:#25d366}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:radial-gradient(circle at 10% 20%,#081119 0%,#15202b 100%) fixed;color:var(--txt);min-height:100vh;display:flex;flex-direction:column}
+a{color:inherit}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;max-width:1000px;width:100%;margin:0 auto}
+.back{color:var(--muted);text-decoration:none;font-size:.9rem}.back:hover{color:var(--cyan)}
+.lock{display:inline-flex;align-items:center;gap:.5rem;padding:.55rem .9rem;border:1px solid var(--border);border-radius:999px;background:var(--glass);color:var(--muted);text-decoration:none;font-size:.85rem;transition:.25s}
+.lock:hover{color:var(--orange);border-color:var(--orange);box-shadow:0 0 18px rgba(255,157,0,.25)}
+main{max-width:1000px;width:100%;margin:0 auto;padding:1rem 1.5rem 2rem;flex:1}
+.hero{text-align:center;padding:2rem 0 2.5rem}
+.icon{width:84px;height:84px;margin:0 auto 1.2rem;border-radius:22px;display:grid;place-items:center;font-size:2.2rem;color:var(--cyan);background:var(--glass);border:1px solid var(--border);box-shadow:0 0 30px rgba(0,204,255,.18)}
+h1{font-size:clamp(2rem,5vw,2.8rem);font-weight:800;letter-spacing:.02em}
+.slogan{color:var(--cyan);font-weight:600;margin-top:.4rem}
+.lead{color:var(--muted);max-width:680px;margin:1.2rem auto 0;line-height:1.7}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-top:1rem}
+.feat{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:1.3rem;backdrop-filter:blur(12px)}
+.feat i{color:var(--cyan);font-size:1.3rem}
+.feat h3{font-size:1rem;margin:.7rem 0 .35rem}
+.feat p{color:var(--muted);font-size:.9rem;line-height:1.55}
+.meta{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-top:2rem}
+.tag{font-size:.78rem;padding:.35rem .75rem;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+.cta{text-align:center;margin:2.5rem 0 1rem}
+.btn-wa{display:inline-flex;align-items:center;gap:.6rem;background:var(--wa);color:#04210f;font-weight:700;text-decoration:none;padding:.9rem 1.4rem;border-radius:999px;box-shadow:0 6px 24px rgba(37,211,102,.25);transition:.25s}
+.btn-wa:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(37,211,102,.4)}
+.cta small{display:block;color:var(--muted);margin-top:.8rem}
+footer{text-align:center;color:var(--muted);font-size:.85rem;padding:2rem 1rem 1.5rem}
+footer a.wa{color:var(--wa);text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="back" href="../"><i class="fas fa-arrow-left"></i> TugLife Lab</a>
+  <a class="lock" href="https://tuglife.live/aisstream/admin" rel="nofollow" title="Acesso administrativo (restrito)"><i class="fas fa-lock"></i> Admin</a>
+</div>
+<main>
+  <section class="hero">
+    <div class="icon"><i class="fas fa-brain"></i></div>
+    <h1>KRATOS</h1>
+    <div class="slogan">Inteligência Naval Estratégica</div>
+    <p class="lead">Plataforma de consciência situacional marítima: tráfego AIS em tempo real, análise por inteligência artificial e registro de conhecimento operacional para apoiar decisões no porto.</p>
+  </section>
+  <section class="grid">
+    <div class="feat"><i class="fas fa-satellite-dish"></i><h3>AIS em tempo real</h3><p>Monitoramento do tráfego de embarcações por área de interesse.</p></div>
+    <div class="feat"><i class="fas fa-brain"></i><h3>Assistente de IA</h3><p>Análises e respostas contextualizadas sobre o cenário operacional.</p></div>
+    <div class="feat"><i class="fas fa-anchor"></i><h3>Manobras e praticagem</h3><p>Sincronização de dados de manobras e praticagem.</p></div>
+    <div class="feat"><i class="fas fa-diagram-project"></i><h3>Grafo de conhecimento</h3><p>Exportação de notas e relações para base de conhecimento.</p></div>
+    <div class="feat"><i class="fas fa-chart-line"></i><h3>Auditoria e uso</h3><p>Painel administrativo de eficácia, uso e saúde do assistente.</p></div>
+    <div class="feat"><i class="fas fa-link"></i><h3>Acesso por convite</h3><p>Link de convite individual com entrada automática.</p></div>
+  </section>
+  <div class="meta"><span class="tag">AIS</span><span class="tag">IA</span><span class="tag">Consciência situacional</span></div>
+  <div class="cta">
+    <a class="btn-wa" href="https://wa.me/5585997737230?text=Ol%C3%A1%2C%20Jossian!%20Vim%20pelo%20TugLife%20Lab%20e%20tenho%20interesse%20no%20KRATOS." target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Solicitar acesso pelo WhatsApp</a>
+    <small>Acesso restrito por convite. Fale comigo para conhecer o sistema.</small>
+  </div>
+</main>
+<footer>
+  &copy; 2026 TugLife Lab | Feito por Jossian Brito ·
+  <a class="wa" href="https://wa.me/5585997737230?text=Ol%C3%A1%2C%20Jossian!%20Vim%20pelo%20TugLife%20Lab." target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> +55 85 99773-7230</a>
+</footer>
+</body>
+</html>
